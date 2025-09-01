@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植物大戰殭屍 - 九九乘法表遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px #10b981; }
+            50% { box-shadow: 0 0 20px #10b981, 0 0 30px #10b981; }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        @keyframes bossGlow {
+            0%, 100% { box-shadow: 0 0 10px #dc2626, 0 0 20px #dc2626; }
+            50% { box-shadow: 0 0 30px #dc2626, 0 0 50px #dc2626, 0 0 70px #dc2626; }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        @keyframes rescueGlow {
+            0%, 100% { box-shadow: 0 0 10px #fbbf24, 0 0 20px #fbbf24; }
+            50% { box-shadow: 0 0 30px #fbbf24, 0 0 50px #fbbf24, 0 0 70px #fbbf24; }
+        }
+        .bounce { animation: bounce 0.6s; }
+        .shake { animation: shake 0.5s; }
+        .glow { animation: glow 1s infinite; }
+        .fadeInUp { animation: fadeInUp 0.8s ease-out; }
+        .slideInLeft { animation: slideInLeft 0.8s ease-out; }
+        .slideInRight { animation: slideInRight 0.8s ease-out; }
+        .pulse { animation: pulse 2s infinite; }
+        .bossGlow { animation: bossGlow 1.5s infinite; }
+        .float { animation: float 3s ease-in-out infinite; }
+        .rescueGlow { animation: rescueGlow 1.5s infinite; }
+        .plant-bg { background: linear-gradient(135deg, #22c55e, #16a34a); }
+        .zombie-bg { background: linear-gradient(135deg, #dc2626, #991b1b); }
+        .boss-bg { background: linear-gradient(135deg, #7c2d12, #451a03); }
+        .final-boss-bg { background: linear-gradient(135deg, #1e1b4b, #0f0a19); }
+        .rescue-bg { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-green-400 via-green-500 to-green-600">
+    <!-- 遊戲標題 -->
+    <div class="text-center py-6">
+        <h1 class="text-4xl font-bold text-white mb-2">🌻 植物大戰殭屍 🧟‍♂️</h1>
+        <h2 class="text-2xl font-semibold text-yellow-200" id="gameSubtitle">數學大作戰</h2>
+    </div>
+
+    <!-- 遊戲狀態欄 -->
+    <div class="max-w-4xl mx-auto px-4 mb-6">
+        <div class="bg-white/90 rounded-lg p-4 shadow-lg">
+            <div class="flex justify-between items-center flex-wrap gap-4">
+                <div class="flex items-center space-x-4">
+                    <div class="text-lg font-bold text-green-700">
+                        🌱 分數: <span id="score" class="text-2xl">0</span>
+                    </div>
+                    <div class="text-lg font-bold text-blue-700">
+                        ⏰ 時間: <span id="timer" class="text-2xl">30</span>秒
+                    </div>
+                    <div class="text-lg font-bold text-purple-700">
+                        🎯 關卡: <span id="questionCount" class="text-2xl">1</span>
+                    </div>
+                    <div class="text-lg font-bold text-red-700">
+                        🧟‍♂️ 殭屍: <span id="zombieCount" class="text-2xl">3</span>隻
+                    </div>
+                    <div class="text-lg font-bold text-orange-700">
+                        🔥 連擊: <span id="streakCount" class="text-2xl">0</span>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button id="restartBtn" class="bg-gray-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-700 transition-all">
+                        🔄 重新開始
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 遊戲主區域 -->
+    <div class="max-w-4xl mx-auto px-4">
+        <!-- 遊戲區域 -->
+            <!-- 模式選擇畫面 -->
+            <div id="modeSelection" class="bg-white/95 rounded-xl p-8 shadow-2xl text-center">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8">🎮 選擇遊戲模式</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <button id="multiplicationMode" class="mode-btn bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-xl text-xl font-bold hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg transform hover:scale-105">
+                    <div class="text-4xl mb-3">✖️</div>
+                    <div class="text-2xl mb-2">九九乘法表</div>
+                    <div class="text-sm opacity-90">挑戰乘法運算</div>
+                </button>
+                <button id="addSubMode" class="mode-btn bg-gradient-to-r from-green-500 to-teal-600 text-white p-6 rounded-xl text-xl font-bold hover:from-green-600 hover:to-teal-700 transition-all shadow-lg transform hover:scale-105">
+                    <div class="text-4xl mb-3">➕➖</div>
+                    <div class="text-2xl mb-2">單位數加減</div>
+                    <div class="text-sm opacity-90">練習加減運算</div>
+                </button>
+                <button id="mixedMode" class="mode-btn bg-gradient-to-r from-red-500 to-pink-600 text-white p-6 rounded-xl text-xl font-bold hover:from-red-600 hover:to-pink-700 transition-all shadow-lg transform hover:scale-105">
+                    <div class="text-4xl mb-3">🎯</div>
+                    <div class="text-2xl mb-2">混合模式</div>
+                    <div class="text-sm opacity-90">終極挑戰</div>
+                </button>
+            </div>
+            <div class="text-gray-600">
+                <p class="mb-2">🌟 選擇你想要挑戰的數學模式</p>
+                <p>每種模式都有獨特的Boss和挑戰！</p>
+            </div>
+        </div>
+
+        <!-- 難度選擇畫面 -->
+        <div id="difficultySelection" class="bg-white/95 rounded-xl p-8 shadow-2xl text-center hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">⚔️ 選擇難度等級</h2>
+            <div class="text-lg text-gray-600 mb-8" id="selectedModeText">已選擇：九九乘法表</div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <button id="easyDifficulty" class="difficulty-btn bg-gradient-to-r from-green-400 to-green-600 text-white p-6 rounded-xl text-xl font-bold hover:from-green-500 hover:to-green-700 transition-all shadow-lg transform hover:scale-105">
+                    <div class="text-4xl mb-3">🌱</div>
+                    <div class="text-2xl mb-2">簡單</div>
+                    <div class="text-sm opacity-90 mb-2">殭屍血量：50</div>
+                    <div class="text-xs opacity-80">殭屍沒有特殊技能</div>
+                </button>
+                <button id="normalDifficulty" class="difficulty-btn bg-gradient-to-r from-yellow-400 to-orange-500 text-white p-6 rounded-xl text-xl font-bold hover:from-yellow-500 hover:to-orange-600 transition-all shadow-lg transform hover:scale-105">
+                    <div class="text-4xl mb-3">🌻</div>
+                    <div class="text-2xl mb-2">普通</div>
+                    <div class="text-sm opacity-90 mb-2">殭屍血量：75</div>
+                    <div class="text-xs opacity-80">殭屍有基本技能</div>
+                </button>
+                <button id="hardDifficulty" class="difficulty-btn bg-gradient-to-r from-red-500 to-purple-600 text-white p-6 rounded-xl text-xl font-bold hover:from-red-600 hover:to-purple-700 transition-all shadow-lg transform hover:scale-105">
+                    <div class="text-4xl mb-3">🔥</div>
+                    <div class="text-2xl mb-2">困難</div>
+                    <div class="text-sm opacity-90 mb-2">殭屍血量：100</div>
+                    <div class="text-xs opacity-80">殭屍技能頻繁發動</div>
+                </button>
+            </div>
+            
+            <div class="bg-gray-100 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-bold text-gray-800 mb-3">🧟‍♂️ 殭屍技能說明</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-700">
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">👻</span>
+                        <span>隱身術：隱藏選項</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">🌪️</span>
+                        <span>混亂術：打亂順序</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">⏰</span>
+                        <span>時間詛咒：減少時間</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">🎭</span>
+                        <span>偽裝術：改變外觀</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">❄️</span>
+                        <span>冰凍術：凍結選項</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">🌫️</span>
+                        <span>致盲術：模糊視線</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">🌀</span>
+                        <span>混淆術：旋轉選項</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">🎪</span>
+                        <span>分身術：假選項</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="text-lg mr-2">📚</span>
+                        <span>文字題：Boss專屬技能</span>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="backToModeBtn" class="bg-gray-500 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-600 transition-all mr-4">
+                ← 返回模式選擇
+            </button>
+        </div>
+
+        <div id="gameArea" class="bg-white/95 rounded-xl p-8 shadow-2xl hidden">
+            <!-- 角色區域 -->
+            <div class="flex justify-between items-center mb-8">
+                <div class="text-center">
+                    <div class="text-6xl mb-2" id="plantChar">🌻</div>
+                    <div class="text-lg font-bold text-green-700">守護植物</div>
+                    <div class="w-32 h-4 bg-gray-300 rounded-full overflow-hidden">
+                        <div id="plantHealth" class="h-full bg-green-500 transition-all duration-500" style="width: 100%"></div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-4xl font-bold text-gray-700 mb-4">VS</div>
+                    <div class="text-lg text-gray-600">殭屍軍團</div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-lg font-bold text-red-700 mb-2">數學殭屍軍團</div>
+                    <div id="zombieArmy" class="flex flex-wrap justify-center gap-2 mb-2">
+                        <div class="zombie-unit text-4xl" data-health="100">🧟‍♂️</div>
+                        <div class="zombie-unit text-4xl" data-health="100">🧟‍♀️</div>
+                        <div class="zombie-unit text-4xl" data-health="100">👻</div>
+                    </div>
+                    <div class="text-sm text-red-600" id="zombieStatus">3隻殭屍剩餘</div>
+                </div>
+            </div>
+
+            <!-- 題目區域 -->
+            <div class="text-center mb-8">
+                <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+                    <h3 class="text-2xl font-bold mb-4" id="questionTitle">🧮 數學挑戰</h3>
+                    <div class="text-4xl font-bold mb-4" id="question">5 + 3 = ?</div>
+                    <div class="text-lg" id="questionHint">選擇正確答案來攻擊殭屍！</div>
+                </div>
+            </div>
+
+            <!-- 選項區域 -->
+            <div id="optionsArea" class="grid gap-4 mb-6">
+                <!-- 動態生成選項按鈕 -->
+            </div>
+
+            <!-- 技能區域 -->
+            <div class="text-center mb-6">
+                <div class="flex justify-center gap-4 flex-wrap">
+                    <button id="ultimateBtn" class="bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-3 rounded-xl text-lg font-bold shadow-2xl hover:from-yellow-500 hover:to-orange-600 transition-all glow transform hover:scale-105" disabled>
+                        ⚡ 陽光炸彈 ⚡<br>
+                        <span class="text-sm">剩餘 <span id="ultimateCount">3</span> 次</span>
+                    </button>
+                    <button id="healBtn" class="bg-gradient-to-r from-pink-400 to-red-500 text-white px-6 py-3 rounded-xl text-lg font-bold shadow-2xl hover:from-pink-500 hover:to-red-600 transition-all transform hover:scale-105" disabled>
+                        💖 治療術 💖<br>
+                        <span class="text-sm">剩餘 <span id="healCount">5</span> 次</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 遊戲訊息 -->
+            <div id="gameMessage" class="text-center text-lg font-bold h-8"></div>
+        </div>
+
+        <!-- 過場動畫畫面 -->
+        <div id="transitionScreen" class="bg-gradient-to-b from-purple-900 via-blue-900 to-black rounded-xl p-8 shadow-2xl text-center hidden">
+            <div class="text-8xl mb-6 pulse" id="transitionEmoji">🌟</div>
+            <h2 class="text-4xl font-bold text-white mb-4 fadeInUp" id="transitionTitle">關卡完成！</h2>
+            <div class="text-2xl text-yellow-300 mb-6 slideInLeft" id="transitionMessage">準備迎接下一波挑戰！</div>
+            <div class="text-lg text-gray-300 slideInRight" id="transitionHint">新的敵人正在逼近...</div>
+        </div>
+
+        <!-- 拯救戴夫關卡畫面 -->
+        <div id="rescueScreen" class="rescue-bg rounded-xl p-8 shadow-2xl text-center hidden">
+            <div class="text-8xl mb-6 float rescueGlow">🧑‍🌾</div>
+            <h2 class="text-4xl font-bold text-white mb-4 fadeInUp">拯救戴夫！</h2>
+            <div class="text-2xl text-yellow-100 mb-6 slideInLeft">戴夫被汽球殭屍抓走了！</div>
+            <div class="text-lg text-yellow-200 mb-8 slideInRight">快速答對題目來拯救他！</div>
+            <div class="bg-white/20 rounded-lg p-4 mb-6">
+                <div class="text-xl font-bold text-white mb-2">🎈 汽球殭屍血量：<span id="balloonZombieHealth">150</span></div>
+                <div class="w-full h-4 bg-gray-700 rounded-full overflow-hidden">
+                    <div id="balloonHealthBar" class="h-full bg-red-500 transition-all duration-500" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 遊戲結束畫面 -->
+        <div id="gameOverScreen" class="bg-white/95 rounded-xl p-8 shadow-2xl text-center hidden">
+            <div class="text-6xl mb-4" id="gameOverEmoji">🎉</div>
+            <h2 class="text-3xl font-bold mb-4" id="gameOverTitle">遊戲結束！</h2>
+            <div class="text-xl mb-6" id="finalScore">最終分數: 0</div>
+            <div class="text-lg mb-6" id="gameOverMessage">你成功保護了花園！</div>
+            <button id="playAgainBtn" class="bg-gradient-to-r from-green-500 to-blue-500 text-white px-8 py-3 rounded-xl text-xl font-bold hover:from-green-600 hover:to-blue-600 transition-all shadow-lg">
+                🌱 再玩一次
+            </button>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        class MathZombieGame {
+            constructor() {
+                this.score = 0;
+                this.timeLeft = 30;
+                this.level = 1;
+                this.ultimateSkills = 3;
+                this.healSkills = 5;
+                this.currentAnswer = 0;
+                this.plantHealth = 100;
+                this.gameActive = false;
+                this.timer = null;
+                this.zombieArmy = [];
+                this.optionCount = 4; // 初始選項數量
+                this.gameMode = null; // 'multiplication', 'addSub', 'mixed'
+                this.difficulty = null; // 'easy', 'normal', 'hard'
+                this.zombieSkillTimer = null;
+                this.hiddenOptions = [];
+                this.questionTimer = null;
+                this.questionStartTime = 0;
+                this.correctStreak = 0; // 連續答對次數
+                this.currentQuestionType = 'math'; // 'math' or 'text'
+                this.textQuestions = []; // 文字題庫
+                this.isRescueLevel = false; // 是否為拯救關卡
+                this.balloonZombieHealth = 150; // 汽球殭屍血量
+                
+                this.plants = ['🌻', '🌱', '🌿', '🍄', '🌵', '🌺', '🌸', '🌼', '🌷'];
+                this.zombieTypes = ['🧟‍♂️', '🧟‍♀️', '👻', '💀', '🎃', '👹', '🤖', '👾', '🦇', '🎈'];
+                this.bossTypes = {
+                    3: { emoji: '🧪', name: '殭屍博士', health: 200 },
+                    5: { emoji: '🦸‍♂️', name: '超人殭屍', health: 250 },
+                    7: { emoji: '⚡', name: '雷電殭屍', health: 300 },
+                    9: { emoji: '❄️', name: '冰霜殭屍', health: 350 },
+                    10: { emoji: '💀', name: '終極魔王', health: 500 }
+                };
+                this.balloonZombie = { emoji: '🎈', name: '汽球殭屍', health: 150 };
+                this.difficultySettings = {
+                    easy: { zombieHealth: 50, bossHealthMultiplier: 0.6, skillChance: 0 },
+                    normal: { zombieHealth: 75, bossHealthMultiplier: 0.8, skillChance: 0.3 },
+                    hard: { zombieHealth: 100, bossHealthMultiplier: 1.0, skillChance: 0.6 }
+                };
+                
+                // 初始化文字題庫
+                this.initializeTextQuestions();
+                this.optionColors = [
+                    'from-green-400 to-green-500 hover:from-green-500 hover:to-green-600',
+                    'from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600',
+                    'from-purple-400 to-purple-500 hover:from-purple-500 hover:to-purple-600',
+                    'from-pink-400 to-pink-500 hover:from-pink-500 hover:to-pink-600',
+                    'from-red-400 to-red-500 hover:from-red-500 hover:to-red-600',
+                    'from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600',
+                    'from-indigo-400 to-indigo-500 hover:from-indigo-500 hover:to-indigo-600',
+                    'from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600'
+                ];
+                
+                this.bindModeSelection();
+            }
+
+
+
+            initializeTextQuestions() {
+                this.textQuestions = {
+                    multiplication: [
+                        { question: "6 × 7 = ?", answer: 42, options: [35, 42, 48, 49] },
+                        { question: "8 × 9 = ?", answer: 72, options: [63, 72, 81, 64] },
+                        { question: "4 × 6 = ?", answer: 24, options: [20, 24, 28, 30] },
+                        { question: "7 × 5 = ?", answer: 35, options: [30, 35, 40, 32] },
+                        { question: "9 × 4 = ?", answer: 36, options: [32, 36, 40, 45] },
+                        { question: "3 × 8 = ?", answer: 24, options: [21, 24, 27, 32] },
+                        { question: "6 × 9 = ?", answer: 54, options: [48, 54, 63, 56] },
+                        { question: "7 × 7 = ?", answer: 49, options: [42, 49, 56, 48] }
+                    ],
+                    addSub: [
+                        { question: "8 + 7 = ?", answer: 15, options: [14, 15, 16, 17] },
+                        { question: "9 - 4 = ?", answer: 5, options: [4, 5, 6, 7] },
+                        { question: "6 + 8 = ?", answer: 14, options: [12, 14, 16, 13] },
+                        { question: "15 - 7 = ?", answer: 8, options: [7, 8, 9, 6] },
+                        { question: "9 + 6 = ?", answer: 15, options: [14, 15, 16, 13] },
+                        { question: "12 - 5 = ?", answer: 7, options: [6, 7, 8, 9] },
+                        { question: "7 + 9 = ?", answer: 16, options: [15, 16, 17, 14] },
+                        { question: "14 - 6 = ?", answer: 8, options: [7, 8, 9, 10] }
+                    ],
+                    mixed: [
+                        { question: "5 × 4 = ?", answer: 20, options: [16, 20, 24, 18] },
+                        { question: "13 - 8 = ?", answer: 5, options: [4, 5, 6, 7] },
+                        { question: "7 + 6 = ?", answer: 13, options: [12, 13, 14, 11] },
+                        { question: "3 × 9 = ?", answer: 27, options: [24, 27, 30, 21] },
+                        { question: "16 - 9 = ?", answer: 7, options: [6, 7, 8, 5] },
+                        { question: "8 + 5 = ?", answer: 13, options: [12, 13, 14, 15] },
+                        { question: "6 × 8 = ?", answer: 48, options: [42, 48, 54, 40] },
+                        { question: "11 - 4 = ?", answer: 7, options: [6, 7, 8, 9] }
+                    ]
+                };
+            }
+
+            bindModeSelection() {
+                document.getElementById('multiplicationMode').addEventListener('click', () => this.selectMode('multiplication'));
+                document.getElementById('addSubMode').addEventListener('click', () => this.selectMode('addSub'));
+                document.getElementById('mixedMode').addEventListener('click', () => this.selectMode('mixed'));
+                
+                document.getElementById('easyDifficulty').addEventListener('click', () => this.startGame('easy'));
+                document.getElementById('normalDifficulty').addEventListener('click', () => this.startGame('normal'));
+                document.getElementById('hardDifficulty').addEventListener('click', () => this.startGame('hard'));
+                document.getElementById('backToModeBtn').addEventListener('click', () => this.backToModeSelection());
+            }
+
+            selectMode(mode) {
+                this.gameMode = mode;
+                
+                // 更新選擇的模式文字
+                const modeNames = {
+                    'multiplication': '九九乘法表',
+                    'addSub': '單位數加減',
+                    'mixed': '混合模式'
+                };
+                document.getElementById('selectedModeText').textContent = `已選擇：${modeNames[mode]}`;
+                
+                // 顯示難度選擇，隱藏模式選擇
+                document.getElementById('modeSelection').classList.add('hidden');
+                document.getElementById('difficultySelection').classList.remove('hidden');
+            }
+
+            backToModeSelection() {
+                document.getElementById('difficultySelection').classList.add('hidden');
+                document.getElementById('modeSelection').classList.remove('hidden');
+                this.gameMode = null;
+            }
+
+            startGame(difficulty) {
+                this.difficulty = difficulty;
+                
+                // 更新標題
+                const subtitle = document.getElementById('gameSubtitle');
+                const questionTitle = document.getElementById('questionTitle');
+                const difficultyText = { easy: '簡單', normal: '普通', hard: '困難' }[difficulty];
+                
+                switch(this.gameMode) {
+                    case 'multiplication':
+                        subtitle.textContent = `九九乘法表大作戰 (${difficultyText})`;
+                        questionTitle.textContent = '✖️ 乘法挑戰';
+                        break;
+                    case 'addSub':
+                        subtitle.textContent = `加減法大作戰 (${difficultyText})`;
+                        questionTitle.textContent = '➕➖ 加減法挑戰';
+                        break;
+                    case 'mixed':
+                        subtitle.textContent = `混合模式大作戰 (${difficultyText})`;
+                        questionTitle.textContent = '🎯 混合挑戰';
+                        break;
+                }
+                
+                // 隱藏難度選擇，顯示遊戲
+                document.getElementById('difficultySelection').classList.add('hidden');
+                document.getElementById('gameArea').classList.remove('hidden');
+                
+                this.initializeGame();
+                this.bindEvents();
+                
+                // 檢查是否觸發拯救關卡 (15% 機率)
+                if (Math.random() < 0.15) {
+                    this.triggerRescueLevel();
+                }
+            }
+
+            triggerRescueLevel() {
+                this.isRescueLevel = true;
+                this.balloonZombieHealth = 150;
+                
+                // 隱藏遊戲區域，顯示拯救畫面
+                document.getElementById('gameArea').classList.add('hidden');
+                document.getElementById('rescueScreen').classList.remove('hidden');
+                
+                // 3秒後開始拯救關卡
+                setTimeout(() => {
+                    document.getElementById('rescueScreen').classList.add('hidden');
+                    document.getElementById('gameArea').classList.remove('hidden');
+                    
+                    // 設置拯救關卡的特殊背景
+                    document.getElementById('gameArea').className = 'rescue-bg rounded-xl p-8 shadow-2xl rescueGlow';
+                    
+                    this.initializeRescueGame();
+                }, 3000);
+            }
+
+            initializeRescueGame() {
+                // 創建汽球殭屍
+                this.zombieArmy = [{
+                    id: 0,
+                    type: this.balloonZombie.emoji,
+                    name: this.balloonZombie.name,
+                    health: this.balloonZombieHealth,
+                    maxHealth: this.balloonZombieHealth,
+                    alive: true,
+                    isBoss: true,
+                    isBalloon: true,
+                    skillCooldown: 0
+                }];
+                
+                this.renderZombieArmy();
+                this.updateDisplay();
+                this.generateQuestion();
+                this.startTimer();
+                this.gameActive = true;
+            }
+
+            initializeGame() {
+                this.createZombieArmy();
+                this.updateDisplay();
+                this.generateQuestion();
+                this.startTimer();
+                this.gameActive = true;
+            }
+
+            createZombieArmy() {
+                this.zombieArmy = [];
+                const settings = this.difficultySettings[this.difficulty];
+                
+                // 檢查是否為Boss關卡
+                if (this.isBossLevel()) {
+                    const boss = this.bossTypes[this.level];
+                    const bossHealth = Math.floor(boss.health * settings.bossHealthMultiplier);
+                    this.zombieArmy.push({
+                        id: 0,
+                        type: boss.emoji,
+                        name: boss.name,
+                        health: bossHealth,
+                        maxHealth: bossHealth,
+                        alive: true,
+                        isBoss: true,
+                        skillCooldown: 0
+                    });
+                } else {
+                    // 普通關卡：根據關卡決定殭屍數量 (3-8隻)
+                    const zombieCount = Math.min(3 + this.level - 1, 8);
+                    
+                    for (let i = 0; i < zombieCount; i++) {
+                        this.zombieArmy.push({
+                            id: i,
+                            type: this.zombieTypes[Math.floor(Math.random() * this.zombieTypes.length)],
+                            health: settings.zombieHealth,
+                            maxHealth: settings.zombieHealth,
+                            alive: true,
+                            isBoss: false,
+                            skillCooldown: 0
+                        });
+                    }
+                }
+                
+                this.renderZombieArmy();
+                this.startZombieSkills();
+            }
+
+            isBossLevel() {
+                return [3, 5, 7, 9, 10].includes(this.level);
+            }
+
+            renderZombieArmy() {
+                const armyContainer = document.getElementById('zombieArmy');
+                armyContainer.innerHTML = '';
+                
+                this.zombieArmy.forEach(zombie => {
+                    if (zombie.alive) {
+                        const zombieEl = document.createElement('div');
+                        
+                        if (zombie.isBoss) {
+                            const bossClass = zombie.isBalloon ? 'zombie-unit text-6xl transition-all duration-300 float rescueGlow pulse' : 'zombie-unit text-6xl transition-all duration-300 bossGlow pulse';
+                            zombieEl.className = bossClass;
+                            const healthBarColor = zombie.isBalloon ? 'bg-yellow-500' : 'bg-red-500';
+                            zombieEl.innerHTML = `
+                                <div class="text-center">
+                                    <div class="text-6xl mb-1">${zombie.type}</div>
+                                    <div class="text-sm ${zombie.isBalloon ? 'text-yellow-300' : 'text-red-300'} font-bold">${zombie.name}</div>
+                                    <div class="w-20 h-2 bg-gray-700 rounded-full mx-auto mt-1">
+                                        <div class="h-full ${healthBarColor} rounded-full transition-all" style="width: ${(zombie.health / zombie.maxHealth) * 100}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                        } else {
+                            zombieEl.className = 'zombie-unit text-4xl transition-all duration-300';
+                            zombieEl.innerHTML = `
+                                <div class="text-center">
+                                    <div class="text-4xl mb-1">${zombie.type}</div>
+                                    <div class="w-16 h-1.5 bg-gray-300 rounded-full mx-auto">
+                                        <div class="h-full bg-red-500 rounded-full transition-all" style="width: ${(zombie.health / zombie.maxHealth) * 100}%"></div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            // 根據血量調整透明度
+                            const opacity = zombie.health / zombie.maxHealth;
+                            zombieEl.style.opacity = Math.max(0.3, opacity);
+                        }
+                        
+                        zombieEl.dataset.zombieId = zombie.id;
+                        armyContainer.appendChild(zombieEl);
+                    }
+                });
+            }
+
+            bindEvents() {
+                document.getElementById('ultimateBtn').addEventListener('click', () => this.useUltimateSkill());
+                document.getElementById('healBtn').addEventListener('click', () => this.useHealSkill());
+                document.getElementById('restartBtn').addEventListener('click', () => this.restartGame());
+                document.getElementById('playAgainBtn').addEventListener('click', () => this.restartGame());
+            }
+
+            startZombieSkills() {
+                if (this.zombieSkillTimer) {
+                    clearInterval(this.zombieSkillTimer);
+                }
+                
+                const settings = this.difficultySettings[this.difficulty];
+                if (settings.skillChance > 0) {
+                    this.zombieSkillTimer = setInterval(() => {
+                        if (this.gameActive && Math.random() < settings.skillChance) {
+                            this.activateZombieSkill();
+                        }
+                    }, 3000); // 每3秒檢查一次
+                }
+            }
+
+            activateZombieSkill() {
+                const aliveZombies = this.zombieArmy.filter(z => z.alive && z.skillCooldown <= 0);
+                if (aliveZombies.length === 0) return;
+                
+                const zombie = aliveZombies[Math.floor(Math.random() * aliveZombies.length)];
+                zombie.skillCooldown = 5; // 5秒冷卻
+                
+                let skills = ['hide', 'shuffle', 'timeReduce', 'disguise', 'freeze', 'blind', 'confuse', 'multiply'];
+                
+                // Boss有額外的文字題技能
+                if (zombie.isBoss) {
+                    skills.push('textQuestion');
+                }
+                
+                const skill = skills[Math.floor(Math.random() * skills.length)];
+                
+                this.executeZombieSkill(skill, zombie);
+                
+                // 減少冷卻時間
+                setTimeout(() => {
+                    if (zombie.skillCooldown > 0) zombie.skillCooldown--;
+                }, 1000);
+            }
+
+            executeZombieSkill(skill, zombie) {
+                const messageEl = document.getElementById('gameMessage');
+                
+                switch(skill) {
+                    case 'hide':
+                        this.hideRandomOption();
+                        messageEl.textContent = `👻 ${zombie.type} 使用隱身術！一個選項被隱藏了！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-purple-600';
+                        break;
+                        
+                    case 'shuffle':
+                        this.shuffleOptions();
+                        messageEl.textContent = `🌪️ ${zombie.type} 使用混亂術！選項被打亂了！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-orange-600';
+                        break;
+                        
+                    case 'timeReduce':
+                        this.timeLeft = Math.max(5, this.timeLeft - 5);
+                        messageEl.textContent = `⏰ ${zombie.type} 使用時間詛咒！時間減少5秒！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-red-600';
+                        break;
+                        
+                    case 'disguise':
+                        this.disguiseOptions();
+                        messageEl.textContent = `🎭 ${zombie.type} 使用偽裝術！選項外觀改變了！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-blue-600';
+                        break;
+                        
+                    case 'freeze':
+                        this.freezeOptions();
+                        messageEl.textContent = `❄️ ${zombie.type} 使用冰凍術！選項被凍結了！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-cyan-600';
+                        break;
+                        
+                    case 'blind':
+                        this.blindOptions();
+                        messageEl.textContent = `🌫️ ${zombie.type} 使用致盲術！選項變模糊了！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-gray-600';
+                        break;
+                        
+                    case 'confuse':
+                        this.confuseOptions();
+                        messageEl.textContent = `🌀 ${zombie.type} 使用混淆術！選項在旋轉！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-indigo-600';
+                        break;
+                        
+                    case 'multiply':
+                        this.multiplyOptions();
+                        messageEl.textContent = `🎪 ${zombie.type} 使用分身術！出現假選項了！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-pink-600';
+                        break;
+                        
+                    case 'textQuestion':
+                        this.forceTextQuestion();
+                        messageEl.textContent = `📚 ${zombie.type} 使用文字題！出現常識問題了！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-purple-600';
+                        break;
+                }
+                
+
+                
+                // 殭屍技能動畫
+                const zombieEl = document.querySelector(`[data-zombie-id="${zombie.id}"]`);
+                if (zombieEl) {
+                    zombieEl.classList.add('pulse');
+                    setTimeout(() => zombieEl.classList.remove('pulse'), 1000);
+                }
+                
+                this.updateDisplay();
+                
+                setTimeout(() => {
+                    messageEl.textContent = '';
+                }, 3000);
+            }
+
+            hideRandomOption() {
+                const options = document.querySelectorAll('.option-btn:not(.hidden)');
+                if (options.length <= 2) return; // 至少保留2個選項
+                
+                const correctOption = document.querySelector(`[data-answer="${this.currentAnswer}"]`);
+                const availableOptions = Array.from(options).filter(opt => opt !== correctOption);
+                
+                if (availableOptions.length > 0) {
+                    const randomOption = availableOptions[Math.floor(Math.random() * availableOptions.length)];
+                    randomOption.classList.add('hidden');
+                    this.hiddenOptions.push(randomOption);
+                    
+                    // 5秒後恢復
+                    setTimeout(() => {
+                        randomOption.classList.remove('hidden');
+                        this.hiddenOptions = this.hiddenOptions.filter(opt => opt !== randomOption);
+                    }, 5000);
+                }
+            }
+
+            shuffleOptions() {
+                const optionsArea = document.getElementById('optionsArea');
+                const options = Array.from(optionsArea.children);
+                
+                // 打亂順序
+                for (let i = options.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    optionsArea.insertBefore(options[j], options[i]);
+                }
+            }
+
+            disguiseOptions() {
+                const options = document.querySelectorAll('.option-btn');
+                const disguiseEmojis = ['🎪', '🎨', '🎭', '🎯', '🎲', '🎮', '🎸', '🎺'];
+                
+                options.forEach(option => {
+                    const originalEmoji = option.querySelector('span').previousSibling.textContent;
+                    const disguiseEmoji = disguiseEmojis[Math.floor(Math.random() * disguiseEmojis.length)];
+                    option.querySelector('span').previousSibling.textContent = disguiseEmoji;
+                    
+                    // 3秒後恢復
+                    setTimeout(() => {
+                        const emojis = ['🎯', '🌟', '💎', '🔥', '⭐', '🎪', '🎨', '🎭'];
+                        const index = Array.from(options).indexOf(option);
+                        option.querySelector('span').previousSibling.textContent = emojis[index % emojis.length];
+                    }, 3000);
+                });
+            }
+
+            freezeOptions() {
+                const options = document.querySelectorAll('.option-btn');
+                options.forEach(option => {
+                    option.style.pointerEvents = 'none';
+                    option.style.opacity = '0.5';
+                    option.style.filter = 'blur(1px)';
+                    option.classList.add('cursor-not-allowed');
+                    
+                    // 3秒後解凍
+                    setTimeout(() => {
+                        option.style.pointerEvents = 'auto';
+                        option.style.opacity = '1';
+                        option.style.filter = 'none';
+                        option.classList.remove('cursor-not-allowed');
+                    }, 3000);
+                });
+            }
+
+            blindOptions() {
+                const options = document.querySelectorAll('.option-btn');
+                options.forEach(option => {
+                    option.style.filter = 'blur(3px)';
+                    option.style.opacity = '0.7';
+                    
+                    // 4秒後恢復視力
+                    setTimeout(() => {
+                        option.style.filter = 'none';
+                        option.style.opacity = '1';
+                    }, 4000);
+                });
+            }
+
+            confuseOptions() {
+                const options = document.querySelectorAll('.option-btn');
+                options.forEach(option => {
+                    option.style.transform = 'rotate(360deg)';
+                    option.style.transition = 'transform 2s ease-in-out';
+                    
+                    // 2秒後停止旋轉
+                    setTimeout(() => {
+                        option.style.transform = 'rotate(0deg)';
+                        setTimeout(() => {
+                            option.style.transition = '';
+                        }, 500);
+                    }, 2000);
+                });
+            }
+
+            multiplyOptions() {
+                const optionsArea = document.getElementById('optionsArea');
+                const existingOptions = Array.from(optionsArea.children);
+                const fakeOptions = [];
+                
+                // 創建2個假選項
+                for (let i = 0; i < 2; i++) {
+                    const fakeOption = existingOptions[0].cloneNode(true);
+                    const fakeAnswer = Math.floor(Math.random() * 100);
+                    fakeOption.querySelector('span').textContent = fakeAnswer;
+                    fakeOption.dataset.answer = fakeAnswer;
+                    fakeOption.style.opacity = '0.8';
+                    fakeOption.style.border = '2px dashed #666';
+                    
+                    // 假選項點擊無效果
+                    fakeOption.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const messageEl = document.getElementById('gameMessage');
+                        messageEl.textContent = '👻 這是假選項！';
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-gray-600';
+                        setTimeout(() => messageEl.textContent = '', 1000);
+                    });
+                    
+                    optionsArea.appendChild(fakeOption);
+                    fakeOptions.push(fakeOption);
+                }
+                
+                // 5秒後移除假選項
+                setTimeout(() => {
+                    fakeOptions.forEach(fake => {
+                        if (fake.parentNode) {
+                            fake.parentNode.removeChild(fake);
+                        }
+                    });
+                }, 5000);
+            }
+
+            forceTextQuestion() {
+                // 強制下一題為文字題
+                setTimeout(() => {
+                    if (this.gameActive) {
+                        this.generateTextQuestion();
+                    }
+                }, 1000);
+            }
+
+            startQuestionTimer() {
+                this.questionStartTime = Date.now();
+                if (this.questionTimer) {
+                    clearTimeout(this.questionTimer);
+                }
+                
+                // 5秒後如果沒有選擇答案，就打亂選項
+                this.questionTimer = setTimeout(() => {
+                    if (this.gameActive) {
+                        this.shuffleOptions();
+                        const messageEl = document.getElementById('gameMessage');
+                        messageEl.textContent = '⏰ 時間太久了！選項被打亂了！';
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-orange-600';
+                        
+                        setTimeout(() => {
+                            messageEl.textContent = '';
+                        }, 2000);
+                    }
+                }, 5000);
+            }
+
+            forceTextQuestion() {
+                // 強制下一題為文字題
+                setTimeout(() => {
+                    if (this.gameActive) {
+                        this.generateTextQuestion();
+                    }
+                }, 1000);
+            }
+
+            generateQuestion() {
+                // 20% 機率出現文字題 (關卡3以上)
+                const shouldUseTextQuestion = this.level >= 3 && Math.random() < 0.2;
+                
+                if (shouldUseTextQuestion) {
+                    this.generateTextQuestion();
+                } else {
+                    this.generateMathQuestion();
+                }
+            }
+
+            generateTextQuestion() {
+                this.currentQuestionType = 'text';
+                const modeQuestions = this.textQuestions[this.gameMode];
+                const textQuestion = modeQuestions[Math.floor(Math.random() * modeQuestions.length)];
+                
+                this.currentAnswer = textQuestion.answer;
+                document.getElementById('question').textContent = textQuestion.question;
+                
+                // 使用預設選項
+                let options = [...textQuestion.options];
+                
+                // 隨機排列選項
+                for (let i = options.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [options[i], options[j]] = [options[j], options[i]];
+                }
+                
+                this.renderOptions(options);
+                this.startQuestionTimer();
+            }
+
+            generateMathQuestion() {
+                this.currentQuestionType = 'math';
+                const num1 = Math.floor(Math.random() * 9) + 1;
+                const num2 = Math.floor(Math.random() * 9) + 1;
+                let questionText = '';
+                let maxAnswer = 18;
+                
+                if (this.gameMode === 'multiplication') {
+                    // 九九乘法表
+                    this.currentAnswer = num1 * num2;
+                    questionText = `${num1} × ${num2} = ?`;
+                    maxAnswer = 81;
+                } else if (this.gameMode === 'addSub') {
+                    // 單位數加減
+                    const isAddition = Math.random() < 0.5;
+                    if (isAddition) {
+                        this.currentAnswer = num1 + num2;
+                        questionText = `${num1} + ${num2} = ?`;
+                    } else {
+                        const larger = Math.max(num1, num2);
+                        const smaller = Math.min(num1, num2);
+                        this.currentAnswer = larger - smaller;
+                        questionText = `${larger} - ${smaller} = ?`;
+                    }
+                } else if (this.gameMode === 'mixed') {
+                    // 混合模式
+                    const operation = Math.floor(Math.random() * 3);
+                    if (operation === 0) {
+                        // 乘法
+                        this.currentAnswer = num1 * num2;
+                        questionText = `${num1} × ${num2} = ?`;
+                        maxAnswer = 81;
+                    } else if (operation === 1) {
+                        // 加法
+                        this.currentAnswer = num1 + num2;
+                        questionText = `${num1} + ${num2} = ?`;
+                    } else {
+                        // 減法
+                        const larger = Math.max(num1, num2);
+                        const smaller = Math.min(num1, num2);
+                        this.currentAnswer = larger - smaller;
+                        questionText = `${larger} - ${smaller} = ?`;
+                    }
+                }
+                
+                document.getElementById('question').textContent = questionText;
+                
+                // 根據關卡增加選項數量 (4-8個選項)
+                this.optionCount = Math.min(4 + Math.floor((this.level - 1) / 2), 8);
+                
+                // 生成選項
+                const options = [this.currentAnswer];
+                while (options.length < this.optionCount) {
+                    const wrongAnswer = Math.floor(Math.random() * (maxAnswer + 1));
+                    if (!options.includes(wrongAnswer)) {
+                        options.push(wrongAnswer);
+                    }
+                }
+                
+                // 隨機排列選項
+                for (let i = options.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [options[i], options[j]] = [options[j], options[i]];
+                }
+                
+                this.renderOptions(options);
+                this.startQuestionTimer();
+            }
+
+            renderOptions(options) {
+                const optionsArea = document.getElementById('optionsArea');
+                optionsArea.innerHTML = '';
+                
+                // 根據選項數量調整網格
+                const gridCols = this.optionCount <= 4 ? 'grid-cols-2' : 
+                                this.optionCount <= 6 ? 'grid-cols-3' : 'grid-cols-4';
+                optionsArea.className = `grid ${gridCols} gap-4 mb-6`;
+                
+                const emojis = ['🎯', '🌟', '💎', '🔥', '⭐', '🎪', '🎨', '🎭'];
+                
+                options.forEach((option, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `option-btn bg-gradient-to-r ${this.optionColors[index % this.optionColors.length]} text-white p-4 rounded-xl text-2xl font-bold transition-all shadow-lg transform hover:scale-105 hover:shadow-xl`;
+                    btn.innerHTML = `${emojis[index % emojis.length]}<br><span class="text-3xl">${option}</span>`;
+                    btn.dataset.answer = option;
+                    btn.addEventListener('click', (e) => {
+                        const answer = e.currentTarget.dataset.answer;
+                        // 處理文字答案和數字答案
+                        const parsedAnswer = isNaN(answer) ? answer : parseInt(answer);
+                        this.selectAnswer(parsedAnswer);
+                    });
+                    optionsArea.appendChild(btn);
+                });
+            }
+
+            selectAnswer(selectedAnswer) {
+                if (!this.gameActive) return;
+                
+                // 清除問題計時器
+                if (this.questionTimer) {
+                    clearTimeout(this.questionTimer);
+                }
+                
+                // 處理字符串和數字的比較
+                const isCorrect = String(selectedAnswer) === String(this.currentAnswer);
+                const messageEl = document.getElementById('gameMessage');
+                
+                if (isCorrect) {
+                    this.correctStreak++; // 增加連續答對次數
+                    
+                    // 基礎分數
+                    let baseScore = 10 + (this.level * 5);
+                    
+                    // 連續答對獎勵
+                    let streakBonus = Math.floor(this.correctStreak / 3) * 10;
+                    
+                    // 會心一擊 (15% 機率)
+                    const isCritical = Math.random() < 0.15;
+                    let criticalMultiplier = 1;
+                    if (isCritical) {
+                        criticalMultiplier = 2;
+                    }
+                    
+                    const totalScore = (baseScore + streakBonus) * criticalMultiplier;
+                    this.score += totalScore;
+                    
+                    this.timeLeft += 5; // 攻擊成功加5秒時間
+                    
+                    // 連續答對補血 (每3題答對補血)
+                    if (this.correctStreak % 3 === 0) {
+                        this.plantHealth = Math.min(100, this.plantHealth + 15);
+                    }
+                    
+                    this.attackZombies(isCritical);
+                    
+
+                    
+                    // 顯示訊息
+                    let message = '🎯 正確！';
+                    if (isCritical) {
+                        message += ' 💥 會心一擊！';
+                    }
+                    if (this.correctStreak % 3 === 0) {
+                        message += ' 💖 連續答對補血！';
+                    }
+                    message += ' ⏰ +5秒';
+                    
+                    messageEl.textContent = message;
+                    messageEl.className = isCritical ? 
+                        'text-center text-lg font-bold h-8 text-yellow-600' : 
+                        'text-center text-lg font-bold h-8 text-green-600';
+                    
+                    // 植物攻擊動畫
+                    document.getElementById('plantChar').classList.add('bounce');
+                    if (isCritical) {
+                        document.getElementById('plantChar').classList.add('glow');
+                    }
+                    
+                    // 隨機更換植物
+                    document.getElementById('plantChar').textContent = this.plants[Math.floor(Math.random() * this.plants.length)];
+                    
+                } else {
+                    this.correctStreak = 0; // 重置連續答對次數
+                    const damage = 10 + this.level * 2;
+                    this.plantHealth = Math.max(0, this.plantHealth - damage); // 關卡越高傷害越大
+                    
+
+                    
+                    messageEl.textContent = '❌ 錯誤！殭屍軍團反擊了！';
+                    messageEl.className = 'text-center text-lg font-bold h-8 text-red-600';
+                    
+                    // 殭屍攻擊動畫
+                    document.getElementById('plantChar').classList.add('shake');
+                    this.animateZombieAttack();
+                }
+                
+                // 清除動畫
+                setTimeout(() => {
+                    document.getElementById('plantChar').classList.remove('bounce', 'shake', 'glow');
+                    document.querySelectorAll('.zombie-unit').forEach(z => z.classList.remove('bounce', 'shake'));
+                }, 600);
+                
+                this.updateDisplay();
+                
+                // 檢查遊戲結束條件
+                if (this.plantHealth <= 0) {
+                    this.endGame('defeat');
+                    return;
+                } else if (this.getAliveZombieCount() === 0) {
+                    this.nextLevel();
+                    return;
+                }
+                
+                // 只有答對才生成新題目
+                if (isCorrect) {
+                    setTimeout(() => {
+                        this.generateQuestion();
+                        messageEl.textContent = '';
+                    }, 1500);
+                } else {
+                    setTimeout(() => {
+                        messageEl.textContent = '';
+                    }, 1500);
+                }
+            }
+
+            attackZombies(isCritical = false) {
+                const aliveZombies = this.zombieArmy.filter(z => z.alive);
+                if (aliveZombies.length === 0) return;
+                
+                // 隨機攻擊一隻殭屍
+                const targetZombie = aliveZombies[Math.floor(Math.random() * aliveZombies.length)];
+                
+                // Boss受到的傷害較少，會心一擊傷害加倍
+                let damage = targetZombie.isBoss ? 20 : 30;
+                if (isCritical) {
+                    damage *= 2;
+                }
+                
+                targetZombie.health -= damage;
+                
+                if (targetZombie.health <= 0) {
+                    targetZombie.alive = false;
+                    targetZombie.health = 0;
+                }
+                
+                // 添加攻擊動畫
+                const zombieEl = document.querySelector(`[data-zombie-id="${targetZombie.id}"]`);
+                if (zombieEl) {
+                    zombieEl.classList.add('shake');
+                    if (isCritical) {
+                        zombieEl.style.filter = 'brightness(2) saturate(2)';
+                        setTimeout(() => {
+                            zombieEl.style.filter = '';
+                        }, 500);
+                    }
+                }
+                
+                this.renderZombieArmy();
+            }
+
+            animateZombieAttack() {
+                const aliveZombieEls = document.querySelectorAll('.zombie-unit');
+                aliveZombieEls.forEach(el => {
+                    el.classList.add('bounce');
+                });
+            }
+
+            getAliveZombieCount() {
+                return this.zombieArmy.filter(z => z.alive).length;
+            }
+
+            nextLevel() {
+                // 新增關卡完成歷史紀錄
+                this.addToHistory(`關卡 ${this.level} 完成！準備進入下一關`, 'success');
+                
+                this.level++;
+                this.timeLeft = Math.max(15, 25 - Math.floor((this.level - 1) / 2) * 2); // 時間越來越少但更合理
+                
+                // 顯示過場動畫
+                this.showTransition();
+            }
+            addToHistory () {
+            }
+            
+            showTransition() {
+                // 暫停計時器避免過場動畫扣時間
+                if (this.timer) {
+                    clearInterval(this.timer);
+                }
+                
+                const gameArea = document.getElementById('gameArea');
+                const transitionScreen = document.getElementById('transitionScreen');
+                const transitionEmoji = document.getElementById('transitionEmoji');
+                const transitionTitle = document.getElementById('transitionTitle');
+                const transitionMessage = document.getElementById('transitionMessage');
+                const transitionHint = document.getElementById('transitionHint');
+                
+                gameArea.classList.add('hidden');
+                transitionScreen.classList.remove('hidden');
+                
+                // 根據關卡類型設置不同的過場效果
+                if (this.isBossLevel()) {
+                    const boss = this.bossTypes[this.level];
+                    transitionScreen.className = this.level === 10 ? 
+                        'final-boss-bg rounded-xl p-8 shadow-2xl text-center' :
+                        'boss-bg rounded-xl p-8 shadow-2xl text-center';
+                    
+                    transitionEmoji.textContent = boss.emoji;
+                    transitionTitle.textContent = `Boss戰！`;
+                    transitionMessage.textContent = `${boss.name} 出現了！`;
+                    transitionHint.textContent = this.level === 10 ? 
+                        '這是最終決戰！' : 
+                        '小心！Boss的血量很厚！';
+                } else {
+                    transitionScreen.className = 'bg-gradient-to-b from-purple-900 via-blue-900 to-black rounded-xl p-8 shadow-2xl text-center';
+                    transitionEmoji.textContent = '🌟';
+                    transitionTitle.textContent = `關卡 ${this.level}`;
+                    transitionMessage.textContent = '準備迎接下一波挑戰！';
+                    transitionHint.textContent = '殭屍軍團越來越強大了...';
+                }
+                
+                // 3秒後開始新關卡
+                setTimeout(() => {
+                    transitionScreen.classList.add('hidden');
+                    gameArea.classList.remove('hidden');
+                    this.createZombieArmy();
+                    this.generateQuestion();
+                    this.updateGameAreaStyle();
+                    // 重新啟動計時器
+                    this.startTimer();
+                }, 3000);
+            }
+
+            updateGameAreaStyle() {
+                const gameArea = document.getElementById('gameArea');
+                
+                if (this.isBossLevel()) {
+                    if (this.level === 10) {
+                        gameArea.className = 'final-boss-bg rounded-xl p-8 shadow-2xl';
+                    } else {
+                        gameArea.className = 'boss-bg rounded-xl p-8 shadow-2xl';
+                    }
+                } else {
+                    gameArea.className = 'bg-white/95 rounded-xl p-8 shadow-2xl';
+                }
+            }
+
+            useUltimateSkill() {
+                if (this.ultimateSkills <= 0 || !this.gameActive) return;
+                
+                this.ultimateSkills--;
+                this.score += 50;
+                this.plantHealth = Math.min(100, this.plantHealth + 30);
+                
+                // 必殺技使用後回復治療技能
+                this.healSkills = Math.min(5, this.healSkills + 1);
+                
+                // 對所有活著的殭屍造成傷害
+                let totalDamage = 0;
+                this.zombieArmy.forEach(zombie => {
+                    if (zombie.alive) {
+                        // Boss受到的必殺技傷害較少
+                        const damage = zombie.isBoss ? 30 : 50;
+                        zombie.health -= damage;
+                        totalDamage += damage;
+                        if (zombie.health <= 0) {
+                            zombie.alive = false;
+                            zombie.health = 0;
+                        }
+                    }
+                });
+                
+                // 新增必殺技使用歷史紀錄
+                this.addToHistory(`使用必殺技！造成 ${totalDamage} 點群體傷害，回復30血量，治療技能+1`, 'skill');
+                
+                const messageEl = document.getElementById('gameMessage');
+                messageEl.textContent = '⚡ 必殺技發動！陽光炸彈群體攻擊！💖 治療技能+1';
+                messageEl.className = 'text-center text-lg font-bold h-8 text-yellow-600';
+                
+                // 特效動畫
+                document.getElementById('plantChar').classList.add('glow');
+                document.querySelectorAll('.zombie-unit').forEach(el => {
+                    el.classList.add('shake');
+                });
+                
+                setTimeout(() => {
+                    document.getElementById('plantChar').classList.remove('glow');
+                    document.querySelectorAll('.zombie-unit').forEach(el => {
+                        el.classList.remove('shake');
+                    });
+                    messageEl.textContent = '';
+                }, 2000);
+                
+                this.renderZombieArmy();
+                this.updateDisplay();
+                
+                if (this.getAliveZombieCount() === 0) {
+                    this.nextLevel();
+                }
+            }
+
+            useHealSkill() {
+                if (this.healSkills <= 0 || !this.gameActive) return;
+                
+                this.healSkills--;
+                this.plantHealth = Math.min(100, this.plantHealth + 50);
+                this.timeLeft += 10; // 額外獎勵時間
+                
+                // 治療技能使用後回復必殺技
+                this.ultimateSkills = Math.min(3, this.ultimateSkills + 1);
+                
+                // 新增治療技能使用歷史紀錄
+                this.addToHistory('使用治療術！回復50血量，時間+10秒，必殺技+1', 'skill');
+                
+                const messageEl = document.getElementById('gameMessage');
+                messageEl.textContent = '💖 治療術發動！植物恢復健康！⏰ +10秒 ⚡ 必殺技+1';
+                messageEl.className = 'text-center text-lg font-bold h-8 text-pink-600';
+                
+                // 治療特效動畫
+                document.getElementById('plantChar').classList.add('bounce');
+                
+                setTimeout(() => {
+                    document.getElementById('plantChar').classList.remove('bounce');
+                    messageEl.textContent = '';
+                }, 2000);
+                
+                this.updateDisplay();
+            }
+
+            startTimer() {
+                this.timer = setInterval(() => {
+                    this.timeLeft--;
+                    this.updateDisplay();
+                    
+                    if (this.timeLeft <= 0) {
+                        // 時間到扣血而不是直接結束遊戲
+                        this.plantHealth = Math.max(0, this.plantHealth - 20);
+                        this.timeLeft = Math.max(10, 20 - Math.floor(this.level / 3) * 2); // 重置時間，關卡越高時間越少
+                        
+                        const messageEl = document.getElementById('gameMessage');
+                        messageEl.textContent = '⏰ 時間到！植物受到傷害！';
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-red-600';
+                        
+                        // 植物受傷動畫
+                        document.getElementById('plantChar').classList.add('shake');
+                        
+                        setTimeout(() => {
+                            document.getElementById('plantChar').classList.remove('shake');
+                            messageEl.textContent = '';
+                        }, 1500);
+                        
+                        this.updateDisplay();
+                        
+                        // 檢查是否血量歸零
+                        if (this.plantHealth <= 0) {
+                            this.endGame('defeat');
+                        }
+                    }
+                }, 1000);
+            }
+
+            updateDisplay() {
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('timer').textContent = this.timeLeft;
+                document.getElementById('questionCount').textContent = this.level;
+                document.getElementById('zombieCount').textContent = this.getAliveZombieCount();
+                document.getElementById('streakCount').textContent = this.correctStreak;
+                document.getElementById('ultimateCount').textContent = this.ultimateSkills;
+                document.getElementById('healCount').textContent = this.healSkills;
+                document.getElementById('plantHealth').style.width = this.plantHealth + '%';
+                document.getElementById('zombieStatus').textContent = `${this.getAliveZombieCount()}隻殭屍剩餘`;
+                
+                // 血量不足警告
+                const plantHealthBar = document.getElementById('plantHealth');
+                if (this.plantHealth <= 30) {
+                    plantHealthBar.className = 'h-full bg-red-500 transition-all duration-500 animate-pulse';
+                    if (this.plantHealth <= 30 && this.plantHealth > 0) {
+                        const messageEl = document.getElementById('gameMessage');
+                        if (!messageEl.textContent.includes('血量危險')) {
+                            messageEl.textContent = '⚠️ 血量危險！快使用治療術！';
+                            messageEl.className = 'text-center text-lg font-bold h-8 text-red-600 animate-pulse';
+                            setTimeout(() => {
+                                if (messageEl.textContent.includes('血量危險')) {
+                                    messageEl.textContent = '';
+                                }
+                            }, 3000);
+                        }
+                    }
+                } else if (this.plantHealth <= 50) {
+                    plantHealthBar.className = 'h-full bg-yellow-500 transition-all duration-500';
+                } else {
+                    plantHealthBar.className = 'h-full bg-green-500 transition-all duration-500';
+                }
+                
+                // 更新必殺技按鈕狀態
+                const ultimateBtn = document.getElementById('ultimateBtn');
+                if (this.ultimateSkills <= 0) {
+                    ultimateBtn.disabled = true;
+                    ultimateBtn.classList.add('opacity-50');
+                    ultimateBtn.classList.remove('glow');
+                } else {
+                    ultimateBtn.disabled = false;
+                    ultimateBtn.classList.remove('opacity-50');
+                }
+                
+                // 更新治療技能按鈕狀態
+                const healBtn = document.getElementById('healBtn');
+                if (this.healSkills <= 0) {
+                    healBtn.disabled = true;
+                    healBtn.classList.add('opacity-50');
+                } else {
+                    healBtn.disabled = false;
+                    healBtn.classList.remove('opacity-50');
+                }
+            }
+
+            endGame(reason) {
+                this.gameActive = false;
+                clearInterval(this.timer);
+                if (this.zombieSkillTimer) {
+                    clearInterval(this.zombieSkillTimer);
+                }
+                if (this.questionTimer) {
+                    clearTimeout(this.questionTimer);
+                }
+                
+                document.getElementById('gameArea').classList.add('hidden');
+                document.getElementById('gameOverScreen').classList.remove('hidden');
+                
+                const gameOverEmoji = document.getElementById('gameOverEmoji');
+                const gameOverTitle = document.getElementById('gameOverTitle');
+                const gameOverMessage = document.getElementById('gameOverMessage');
+                
+                switch (reason) {
+                    case 'victory':
+                        gameOverEmoji.textContent = '🎉';
+                        gameOverTitle.textContent = '勝利！';
+                        gameOverMessage.textContent = '你成功擊敗了數學殭屍！';
+                        break;
+                    case 'defeat':
+                        gameOverEmoji.textContent = '💀';
+                        gameOverTitle.textContent = '失敗！';
+                        gameOverMessage.textContent = '殭屍攻破了防線...再試一次吧！';
+                        break;
+                    case 'timeout':
+                        gameOverEmoji.textContent = '⏰';
+                        gameOverTitle.textContent = '時間到！';
+                        gameOverMessage.textContent = '時間用完了！快速計算是關鍵！';
+                        break;
+                    case 'complete':
+                        gameOverEmoji.textContent = '🏆';
+                        gameOverTitle.textContent = '完成！';
+                        gameOverMessage.textContent = '你完成了所有題目！真厲害！';
+                        break;
+                }
+                
+                document.getElementById('finalScore').textContent = `最終分數: ${this.score}`;
+            }
+
+            restartGame() {
+                // 重置所有數值
+                this.score = 0;
+                this.timeLeft = 30;
+                this.level = 1;
+                this.ultimateSkills = 3;
+                this.healSkills = 5;
+                this.plantHealth = 100;
+                this.zombieArmy = [];
+                this.optionCount = 4;
+                this.gameActive = false;
+                this.gameMode = null;
+                this.difficulty = null;
+                this.hiddenOptions = [];
+                this.correctStreak = 0;
+                
+                if (this.timer) {
+                    clearInterval(this.timer);
+                }
+                if (this.zombieSkillTimer) {
+                    clearInterval(this.zombieSkillTimer);
+                }
+                if (this.questionTimer) {
+                    clearTimeout(this.questionTimer);
+                }
+                
+                // 重置角色
+                document.getElementById('plantChar').textContent = '🌻';
+                
+                // 重置標題
+                document.getElementById('gameSubtitle').textContent = '數學大作戰';
+                
+                // 顯示模式選擇，隱藏其他畫面
+                document.getElementById('modeSelection').classList.remove('hidden');
+                document.getElementById('difficultySelection').classList.add('hidden');
+                document.getElementById('gameArea').classList.add('hidden');
+                document.getElementById('gameOverScreen').classList.add('hidden');
+                document.getElementById('transitionScreen').classList.add('hidden');
+                
+                // 重置遊戲區域樣式
+                document.getElementById('gameArea').className = 'bg-white/95 rounded-xl p-8 shadow-2xl hidden';
+            }
+        }
+
+        // 啟動遊戲
+        window.addEventListener('DOMContentLoaded', () => {
+            new MathZombieGame();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'97828fc5e1f6dc87',t:'MTc1NjcwNjU3Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
