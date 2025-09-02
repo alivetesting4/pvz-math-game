@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>植物大戰殭屍 - 九九乘法表遊戲</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -63,6 +63,18 @@
         .boss-bg { background: linear-gradient(135deg, #7c2d12, #451a03); }
         .final-boss-bg { background: linear-gradient(135deg, #1e1b4b, #0f0a19); }
         .rescue-bg { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+        /* iOS/iPad viewport and text sizing fixes */
+        html { -webkit-text-size-adjust: 100%; }
+        html, body { height: 100%; }
+        body { min-height: 100svh; }
+        @supports (height: 100dvh) {
+            body { min-height: 100dvh; }
+        }
+        @media (min-width: 768px) and (max-width: 1024px) {
+            /* Slightly tighten paddings on iPad */
+            #gameArea, #modeSelection, #difficultySelection, #transitionScreen, #rescueScreen, #gameOverScreen { padding: 1.5rem; }
+            body { overflow: hidden; }
+        }
     </style>
 </head>
 <body class="min-h-screen bg-gradient-to-b from-green-400 via-green-500 to-green-600">
@@ -209,7 +221,7 @@
             <div class="flex justify-between items-center mb-8">
                 <div class="text-center">
                     <div class="text-6xl mb-2" id="plantChar">🌻</div>
-                    <div class="text-lg font-bold text-green-700">守護植物</div>
+                    <div class="text-lg font-bold text-green-700" id="plantName">守護植物</div>
                     <div class="w-32 h-4 bg-gray-300 rounded-full overflow-hidden">
                         <div id="plantHealth" class="h-full bg-green-500 transition-all duration-500" style="width: 100%"></div>
                     </div>
@@ -241,7 +253,7 @@
             </div>
 
             <!-- 選項區域 -->
-            <div id="optionsArea" class="grid gap-4 mb-6">
+            <div id="optionsArea" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <!-- 動態生成選項按鈕 -->
             </div>
 
@@ -323,14 +335,67 @@
                 this.textQuestions = []; // 文字題庫
                 this.isRescueLevel = false; // 是否為拯救關卡
                 this.balloonZombieHealth = 150; // 汽球殭屍血量
+                this.englishModeActive = false; // 英文作答模式
+                this.originalOptionsBackup = null;
+                this.currentAnswerBackup = null;
+                this.isSecretLevel = false; // 秘密關卡
+                this.englishifyUnlocked = false; // 打敗殭屍大隻佬後解鎖
+                this.currentBossIsBigGuy = false; // 本回合Boss是否為殭屍大隻佬
                 
-                this.plants = ['🌻', '🌱', '🌿', '🍄', '🌵', '🌺', '🌸', '🌼', '🌷'];
+                // 完整植物列表
+                this.plants = {
+                    '向日葵': { emoji: '🌻', skill: '產生陽光', color: 'yellow' },
+                    '陽光菇': { emoji: '🍄', skill: '夜間產陽光', color: 'orange' },
+                    '雙向日葵': { emoji: '🌻🌻', skill: '雙倍陽光', color: 'gold' },
+                    '豌豆射手': { emoji: '🟢', skill: '發射豌豆', color: 'green' },
+                    '雙發射手': { emoji: '🟢🟢', skill: '雙發豌豆', color: 'lime' },
+                    '三重射手': { emoji: '🟢🟢🟢', skill: '三發豌豆', color: 'emerald' },
+                    '寒冰射手': { emoji: '❄️', skill: '冰凍攻擊', color: 'blue' },
+                    '火炬樁': { emoji: '🔥', skill: '點燃豌豆', color: 'red' },
+                    '西瓜投手': { emoji: '🍉', skill: '重型攻擊', color: 'pink' },
+                    '冰西瓜投手': { emoji: '🧊🍉', skill: '冰凍重擊', color: 'cyan' },
+                    '玉米投手': { emoji: '🌽', skill: '黃油眩暈', color: 'yellow' },
+                    '爆炸櫻桃': { emoji: '🍒', skill: '範圍爆炸', color: 'red' },
+                    '辣椒': { emoji: '🌶️', skill: '一排攻擊', color: 'orange' },
+                    '堅果牆': { emoji: '🥜', skill: '防禦阻擋', color: 'brown' },
+                    '高堅果牆': { emoji: '🏰', skill: '高級防禦', color: 'gray' },
+                    '南瓜頭': { emoji: '🎃', skill: '保護植物', color: 'orange' },
+                    '地刺': { emoji: '⚡', skill: '地面攻擊', color: 'purple' },
+                    '地刺王': { emoji: '👑⚡', skill: '強力地刺', color: 'violet' },
+                    '大蒜': { emoji: '🧄', skill: '改變路線', color: 'white' },
+                    '磁鐵菇': { emoji: '🧲', skill: '吸取金屬', color: 'silver' },
+                    '冰凍蘑菇': { emoji: '🧊🍄', skill: '全場冰凍', color: 'blue' },
+                    '模仿者': { emoji: '🎭', skill: '複製植物', color: 'indigo' },
+                    '小噴菇': { emoji: '🍄💨', skill: '短程攻擊', color: 'gray' },
+                    '大噴菇': { emoji: '🍄💨💨', skill: '中程攻擊', color: 'slate' },
+                    '魅惑菇': { emoji: '💜🍄', skill: '控制殭屍', color: 'purple' },
+                    '咖啡豆': { emoji: '☕', skill: '喚醒蘑菇', color: 'amber' },
+                    '香蒲': { emoji: '🌾', skill: '水中攻擊', color: 'teal' },
+                    '爆米花機': { emoji: '🍿', skill: '連續發射', color: 'yellow' },
+                    '裂荚射手': { emoji: '🟢💥', skill: '後方攻擊', color: 'green' },
+                    '菜問': { emoji: '🥬', skill: '問號效果', color: 'green' },
+                    '金盞花': { emoji: '🌼', skill: '產生金幣', color: 'gold' },
+                    '芥末炸彈': { emoji: '💛💥', skill: '黃色爆炸', color: 'yellow' },
+                    '火龍草': { emoji: '🐲🔥', skill: '火焰攻擊', color: 'red' },
+                    '竹竿跳躍者（植物版）': { emoji: '🎋', skill: '跳躍攻擊', color: 'green' },
+                    '蘑菇炸彈': { emoji: '🍄💥', skill: '蘑菇爆炸', color: 'brown' },
+                    '荷葉': { emoji: '🪷', skill: '水上平台', color: 'green' },
+                    '睡蓮': { emoji: '🌸🪷', skill: '美麗平台', color: 'pink' },
+                    '防護蘑菇': { emoji: '🛡️🍄', skill: '防護罩', color: 'blue' },
+                    '地雷': { emoji: '💣', skill: '踩爆攻擊', color: 'black' },
+                    '蘑菇燈': { emoji: '🍄💡', skill: '照明除霧', color: 'yellow' },
+                    '蘑菇盾': { emoji: '🍄🛡️', skill: '蘑菇防禦', color: 'gray' }
+                };
+                
+                this.currentPlant = null;
+                this.currentPlantName = null;
                 this.zombieTypes = ['🧟‍♂️', '🧟‍♀️', '👻', '💀', '🎃', '👹', '🤖', '👾', '🦇', '🎈'];
                 this.bossTypes = {
-                    3: { emoji: '🧪', name: '殭屍博士', health: 200 },
-                    5: { emoji: '🦸‍♂️', name: '超人殭屍', health: 250 },
-                    7: { emoji: '⚡', name: '雷電殭屍', health: 300 },
-                    9: { emoji: '❄️', name: '冰霜殭屍', health: 350 },
+                    3: { emoji: '🧪', name: '殭屍博士', health: 200, isBigGuy: true },
+                    5: { emoji: '🦸‍♂️', name: '超人殭屍', health: 250},
+                    7: { emoji: '💪🧟', name: '殭屍大隻佬', health: 300},
+                    //7: { emoji: '⚡', name: '雷電殭屍', health: 300 },
+                    9: { emoji: '⚡❄️', name: '雷電冰霜殭屍', health: 350 },
                     10: { emoji: '💀', name: '終極魔王', health: 500 }
                 };
                 this.balloonZombie = { emoji: '🎈', name: '汽球殭屍', health: 150 };
@@ -492,6 +557,9 @@
             startGame(difficulty) {
                 this.difficulty = difficulty;
                 
+                // 隨機選擇植物角色
+                this.selectRandomPlant();
+                
                 // 更新標題
                 const subtitle = document.getElementById('gameSubtitle');
                 const questionTitle = document.getElementById('questionTitle');
@@ -525,14 +593,26 @@
                 }
             }
 
+
+            selectRandomPlant() {
+                const plantNames = Object.keys(this.plants);
+                const randomPlant = plantNames[Math.floor(Math.random() * plantNames.length)];
+                this.currentPlant = this.plants[randomPlant];
+                this.currentPlantName = randomPlant;
+                
+                // 更新植物角色顯示
+                document.getElementById('plantChar').textContent = this.currentPlant.emoji;
+                document.getElementById('plantName').textContent = `${randomPlant} (${this.currentPlant.skill})`;
+            }
+                                  
             triggerRescueLevel() {
                 this.isRescueLevel = true;
                 this.balloonZombieHealth = 150;
-                
+
                 // 隱藏遊戲區域，顯示拯救畫面
                 document.getElementById('gameArea').classList.add('hidden');
                 document.getElementById('rescueScreen').classList.remove('hidden');
-                
+
                 // 3秒後開始拯救關卡
                 setTimeout(() => {
                     document.getElementById('rescueScreen').classList.add('hidden');
@@ -590,16 +670,18 @@
                         maxHealth: bossHealth,
                         alive: true,
                         isBoss: true,
-                        skillCooldown: 0
+                        skillCooldown: 0,
+                        isBigGuy: !!boss.isBigGuy
                     });
                 } else {
                     // 普通關卡：根據關卡決定殭屍數量 (3-8隻)
-                    const zombieCount = Math.min(3 + this.level - 1, 8);
-                    
+                    const zombieCount = Math.min(3 + this.level - 1, 6);
+
                     for (let i = 0; i < zombieCount; i++) {
+                        const zType = this.zombieTypes[Math.floor(Math.random() * this.zombieTypes.length)];
                         this.zombieArmy.push({
                             id: i,
-                            type: this.zombieTypes[Math.floor(Math.random() * this.zombieTypes.length)],
+                            type: zType,
                             health: settings.zombieHealth,
                             maxHealth: settings.zombieHealth,
                             alive: true,
@@ -673,12 +755,17 @@
                 }
                 
                 const settings = this.difficultySettings[this.difficulty];
-                if (settings.skillChance > 0) {
+                const actualSkillChance = this.isSecretLevel ? Math.max(settings.skillChance, 0.6) : settings.skillChance;
+                if (actualSkillChance > 0) {
                     this.zombieSkillTimer = setInterval(() => {
-                        if (this.gameActive && Math.random() < settings.skillChance) {
-                            this.activateZombieSkill();
+                        if (this.gameActive) {
+                            // 冷卻遞減：每秒遞減直到0
+                            this.zombieArmy.forEach(z => { if (z.skillCooldown > 0) z.skillCooldown = Math.max(0, z.skillCooldown - 1); });
+                            if (Math.random() < actualSkillChance) {
+                                this.activateZombieSkill();
+                            }
                         }
-                    }, 3000); // 每3秒檢查一次
+                    }, 1000); // 每秒檢查並遞減冷卻
                 }
             }
 
@@ -687,10 +774,10 @@
                 if (aliveZombies.length === 0) return;
                 
                 const zombie = aliveZombies[Math.floor(Math.random() * aliveZombies.length)];
-                zombie.skillCooldown = 5; // 5秒冷卻
+                zombie.skillCooldown = 6; // 6秒冷卻
                 
-                let skills = ['hide', 'shuffle', 'timeReduce', 'disguise', 'freeze', 'blind', 'confuse', 'multiply'];
-                
+                //let skills = ['englishify','hide', 'shuffle', 'timeReduce', 'disguise', 'freeze', 'blind', 'confuse', 'multiply'];
+                let skills = ['englishify', 'shuffle', 'timeReduce', 'hide', 'freeze', 'blind', 'confuse', 'multiply'];
                 // Boss有額外的文字題技能
                 if (zombie.isBoss) {
                     skills.push('textQuestion');
@@ -723,8 +810,8 @@
                         break;
                         
                     case 'timeReduce':
-                        this.timeLeft = Math.max(5, this.timeLeft - 5);
-                        messageEl.textContent = `⏰ ${zombie.type} 使用時間詛咒！時間減少5秒！`;
+                        this.timeLeft = Math.max(1, this.timeLeft - 1);
+                        messageEl.textContent = `⏰ ${zombie.type} 使用時間詛咒！時間減少1秒！`;
                         messageEl.className = 'text-center text-lg font-bold h-8 text-red-600';
                         break;
                         
@@ -763,6 +850,11 @@
                         messageEl.textContent = `📚 ${zombie.type} 使用文字題！出現常識問題了！`;
                         messageEl.className = 'text-center text-lg font-bold h-8 text-purple-600';
                         break;
+                    case 'englishify':
+                        this.englishifyOptions();
+                        messageEl.textContent = `🇬🇧 ${zombie.type} 使用英文詛咒！請用英文作答！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-blue-700';
+                        break;
                 }
                 
 
@@ -779,6 +871,74 @@
                 setTimeout(() => {
                     messageEl.textContent = '';
                 }, 3000);
+            }
+
+            // 將數字轉為英文單字 (0-999 簡易版，遊戲實際 ≤ 100)
+            numberToEnglish(n) {
+                const ones = ['zero','one','two','three','four','five','six','seven','eight','nine'];
+                const teens = ['ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+                const tens = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+                if (n < 10) return ones[n];
+                if (n < 20) return teens[n - 10];
+                if (n < 100) {
+                    const t = Math.floor(n / 10);
+                    const r = n % 10;
+                    return r === 0 ? tens[t] : `${tens[t]} ${ones[r]}`;
+                }
+                if (n < 1000) {
+                    const h = Math.floor(n / 100);
+                    const r = n % 100;
+                    const rest = r === 0 ? '' : ` ${this.numberToEnglish(r)}`;
+                    return `${ones[h]} hundred${rest}`;
+                }
+                return String(n);
+            }
+
+            // 殭屍技能：將題目選項改為英文單字顯示，並以英文作答
+            englishifyOptions() {
+                if (this.englishModeActive) return;
+                const optionsArea = document.getElementById('optionsArea');
+                if (!optionsArea || optionsArea.children.length === 0) return;
+
+                // 備份當前選項與答案
+                const currentButtons = Array.from(optionsArea.children);
+                const numericOptions = currentButtons.map(btn => {
+                    const val = btn.dataset.answer;
+                    return isNaN(val) ? val : parseInt(val);
+                });
+                this.originalOptionsBackup = numericOptions;
+                this.currentAnswerBackup = this.currentAnswer;
+
+                // 僅在數學或文字數字題生效（排除已是文字答案的題型）
+                const allNumbers = numericOptions.every(v => typeof v === 'number');
+                if (!allNumbers) return;
+
+                // 切換為英文模式
+                this.englishModeActive = true;
+                const englishOptions = numericOptions.map(n => this.numberToEnglish(n));
+                const englishAnswer = this.numberToEnglish(this.currentAnswer);
+
+                // 重新渲染英文選項
+                this.currentAnswer = englishAnswer;
+                this.renderOptions(englishOptions);
+
+                // 顯示英文作答提示
+                const hintEl = document.getElementById('questionHint');
+                const originalHint = hintEl.textContent;
+                hintEl.textContent = '請選擇正確的英文數字單字！';
+
+                // 10秒後恢復數字顯示（若題目尚未變更）
+                setTimeout(() => {
+                    if (!this.gameActive) return;
+                    if (!this.englishModeActive) return;
+                    // 恢復為數字選項
+                    this.currentAnswer = this.currentAnswerBackup;
+                    this.renderOptions(this.originalOptionsBackup);
+                    hintEl.textContent = originalHint;
+                    this.englishModeActive = false;
+                    this.originalOptionsBackup = null;
+                    this.currentAnswerBackup = null;
+                }, 10000);
             }
 
             hideRandomOption() {
@@ -827,6 +987,7 @@
                         const index = Array.from(options).indexOf(option);
                         option.querySelector('span').previousSibling.textContent = emojis[index % emojis.length];
                     }, 3000);
+                   
                 });
             }
 
@@ -838,13 +999,13 @@
                     option.style.filter = 'blur(1px)';
                     option.classList.add('cursor-not-allowed');
                     
-                    // 3秒後解凍
+                    // 1.3秒後解凍
                     setTimeout(() => {
                         option.style.pointerEvents = 'auto';
                         option.style.opacity = '1';
                         option.style.filter = 'none';
                         option.classList.remove('cursor-not-allowed');
-                    }, 3000);
+                    }, 1300);
                 });
             }
 
@@ -868,13 +1029,13 @@
                     option.style.transform = 'rotate(360deg)';
                     option.style.transition = 'transform 2s ease-in-out';
                     
-                    // 2秒後停止旋轉
+                    // 5秒後停止旋轉
                     setTimeout(() => {
                         option.style.transform = 'rotate(0deg)';
                         setTimeout(() => {
                             option.style.transition = '';
                         }, 500);
-                    }, 2000);
+                    }, 5000);
                 });
             }
 
@@ -887,11 +1048,14 @@
                 for (let i = 0; i < 2; i++) {
                     const fakeOption = existingOptions[0].cloneNode(true);
                     const fakeAnswer = Math.floor(Math.random() * 100);
-                    fakeOption.querySelector('span').textContent = fakeAnswer;
+                    const answerSpan = fakeOption.querySelector('.text-xl:last-child');
+                    if (answerSpan) {
+                        answerSpan.textContent = fakeAnswer;
+                    }
                     fakeOption.dataset.answer = fakeAnswer;
                     fakeOption.style.opacity = '0.8';
                     fakeOption.style.border = '2px dashed #666';
-                    
+
                     // 假選項點擊無效果
                     fakeOption.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -906,14 +1070,14 @@
                     fakeOptions.push(fakeOption);
                 }
                 
-                // 5秒後移除假選項
+                // 10秒後移除假選項
                 setTimeout(() => {
                     fakeOptions.forEach(fake => {
                         if (fake.parentNode) {
                             fake.parentNode.removeChild(fake);
                         }
                     });
-                }, 5000);
+                }, 10000);
             }
 
             forceTextQuestion() {
@@ -931,7 +1095,7 @@
                     clearTimeout(this.questionTimer);
                 }
                 
-                // 5秒後如果沒有選擇答案，就打亂選項
+                // 10秒後如果沒有選擇答案，就打亂選項
                 this.questionTimer = setTimeout(() => {
                     if (this.gameActive) {
                         this.shuffleOptions();
@@ -943,7 +1107,7 @@
                             messageEl.textContent = '';
                         }, 2000);
                     }
-                }, 5000);
+                }, 10000);
             }
 
             forceTextQuestion() {
@@ -974,8 +1138,18 @@
                 this.currentAnswer = textQuestion.answer;
                 document.getElementById('question').textContent = textQuestion.question;
                 
-                // 使用預設選項
+                // 使用預設選項，並補足到本關選項數量
+                this.optionCount = Math.min(4 + Math.floor((this.level - 1) / 2), 8);
                 let options = [...textQuestion.options];
+                const existing = new Set(options);
+                while (options.length < this.optionCount) {
+                    const delta = Math.floor(Math.random() * 9) + 1;
+                    const candidate = Math.random() < 0.5 ? this.currentAnswer + delta : Math.max(0, this.currentAnswer - delta);
+                    if (!existing.has(candidate) && candidate !== this.currentAnswer) {
+                        options.push(candidate);
+                        existing.add(candidate);
+                    }
+                }
                 
                 // 隨機排列選項
                 for (let i = options.length - 1; i > 0; i--) {
@@ -1059,18 +1233,25 @@
             renderOptions(options) {
                 const optionsArea = document.getElementById('optionsArea');
                 optionsArea.innerHTML = '';
-                
+
                 // 根據選項數量調整網格
-                const gridCols = this.optionCount <= 4 ? 'grid-cols-2' : 
-                                this.optionCount <= 6 ? 'grid-cols-3' : 'grid-cols-4';
-                optionsArea.className = `grid ${gridCols} gap-4 mb-6`;
+                let gridCols;
+                if (this.optionCount <= 4) {
+                    gridCols = 'grid-cols-2 md:grid-cols-2 lg:grid-cols-4';
+                } else if (this.optionCount <= 6) {
+                    gridCols = 'grid-cols-2 md:grid-cols-3 lg:grid-cols-3';
+                } else {
+                    gridCols = 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4';
+                }
+                
+                optionsArea.className = `grid ${gridCols} gap-3 md:gap-4 mb-6`;
                 
                 const emojis = ['🎯', '🌟', '💎', '🔥', '⭐', '🎪', '🎨', '🎭'];
-                
+
                 options.forEach((option, index) => {
                     const btn = document.createElement('button');
-                    btn.className = `option-btn bg-gradient-to-r ${this.optionColors[index % this.optionColors.length]} text-white p-4 rounded-xl text-2xl font-bold transition-all shadow-lg transform hover:scale-105 hover:shadow-xl`;
-                    btn.innerHTML = `${emojis[index % emojis.length]}<br><span class="text-3xl">${option}</span>`;
+                    btn.className = `option-btn bg-gradient-to-r ${this.optionColors[index % this.optionColors.length]} text-white p-3 md:p-4 rounded-xl text-lg md:text-2xl font-bold transition-all shadow-lg transform hover:scale-105 hover:shadow-xl min-h-[80px] md:min-h-[100px] flex flex-col items-center justify-center`;
+                    btn.innerHTML = `<div class="text-xl md:text-2xl mb-1">${emojis[index % emojis.length]}</div><div class="text-xl md:text-3xl">${option}</div>`;
                     btn.dataset.answer = option;
                     btn.addEventListener('click', (e) => {
                         const answer = e.currentTarget.dataset.answer;
@@ -1084,11 +1265,19 @@
 
             selectAnswer(selectedAnswer) {
                 if (!this.gameActive) return;
+                                             
+                                        
                 
                 // 清除問題計時器
                 if (this.questionTimer) {
                     clearTimeout(this.questionTimer);
                 }
+                                           
+                                               
+                                  
+                                              
+                                      
+                 
                 
                 // 處理字符串和數字的比較
                 const isCorrect = String(selectedAnswer) === String(this.currentAnswer);
@@ -1133,21 +1322,21 @@
                         message += ' 💖 連續答對補血！';
                     }
                     message += ' ⏰ +5秒';
-                    
+
                     messageEl.textContent = message;
-                    messageEl.className = isCritical ? 
-                        'text-center text-lg font-bold h-8 text-yellow-600' : 
+                    messageEl.className = isCritical ?
+                        'text-center text-lg font-bold h-8 text-yellow-600' :
                         'text-center text-lg font-bold h-8 text-green-600';
-                    
+
                     // 植物攻擊動畫
                     document.getElementById('plantChar').classList.add('bounce');
                     if (isCritical) {
                         document.getElementById('plantChar').classList.add('glow');
                     }
                     
-                    // 隨機更換植物
-                    document.getElementById('plantChar').textContent = this.plants[Math.floor(Math.random() * this.plants.length)];
-                    
+                    // 隨機更換植物 - removed 
+                    // document.getElementById('plantChar').textContent = this.plants[Math.floor(Math.random() * this.plants.length)];
+                    this.triggerPlantSkill();
                 } else {
                     this.correctStreak = 0; // 重置連續答對次數
                     const damage = 10 + this.level * 2;
@@ -1181,6 +1370,7 @@
                 }
                 
                 // 只有答對才生成新題目
+                                      
                 if (isCorrect) {
                     setTimeout(() => {
                         this.generateQuestion();
@@ -1191,15 +1381,135 @@
                         messageEl.textContent = '';
                     }, 1500);
                 }
+
+                                                             
+                                  
+                                                 
+                                                       
+                                             
+                             
             }
 
+            triggerPlantSkill() {
+                if (!this.currentPlant || !this.currentPlantName) return;
+                
+                const messageEl = document.getElementById('gameMessage');
+                let skillMessage = '';
+                let skillEffect = false;
+                
+                if (Math.random() < 0.3) {
+                    switch(this.currentPlantName) {
+                        case '向日葵':
+                        case '陽光菇':
+                        case '雙向日葵':
+                            this.score += 20;
+                            skillMessage = `🌻 ${this.currentPlantName}技能：產生額外陽光！+20分`;
+                            skillEffect = true;
+                            break;
+                            
+                        case '豌豆射手':
+                        case '雙發射手':
+                        case '三重射手':
+                            this.timeLeft += 3;
+                            skillMessage = `🟢 ${this.currentPlantName}技能：快速射擊！+3秒`;
+                            skillEffect = true;
+                            break;
+                            
+                        case '寒冰射手':
+                        case '冰西瓜投手':
+                        case '冰凍蘑菇':
+                            this.freezeOptions();
+                            skillMessage = `❄️ ${this.currentPlantName}技能：冰凍攻擊！選項被凍結`;
+                            skillEffect = true;
+                            break;
+                            
+                        case '火炬樁':
+                        case '辣椒':
+                        case '火龍草':
+                            this.attackZombies(true);
+                            skillMessage = `🔥 ${this.currentPlantName}技能：火焰攻擊！造成額外傷害`;
+                            skillEffect = true;
+                            break;
+                            
+                        case '爆炸櫻桃':
+                        case '芥末炸彈':
+                        case '蘑菇炸彈':
+                            this.zombieArmy.forEach(zombie => {
+                                if (zombie.alive) {
+                                    zombie.health -= 15;
+                                    if (zombie.health <= 0) {
+                                        zombie.alive = false;
+                                        zombie.health = 0;
+                                    }
+                                }
+                            });
+                            this.renderZombieArmy();
+                            skillMessage = `💥 ${this.currentPlantName}技能：爆炸攻擊！群體傷害`;
+                            skillEffect = true;
+                            break;
+                            
+                        case '堅果牆':
+                        case '高堅果牆':
+                        case '南瓜頭':
+                            this.plantHealth = Math.min(100, this.plantHealth + 20);
+                            skillMessage = `🛡️ ${this.currentPlantName}技能：防護強化！+20血量`;
+                            skillEffect = true;
+                            break;
+                            
+                        case '魅惑菇':
+                        case '模仿者':
+                            const correctBtn = document.querySelector(`[data-answer="${this.currentAnswer}"]`);
+                            if (correctBtn) {
+                                correctBtn.style.border = '3px solid gold';
+                                correctBtn.style.boxShadow = '0 0 15px gold';
+                                setTimeout(() => {
+                                    correctBtn.style.border = '';
+                                    correctBtn.style.boxShadow = '';
+                                }, 2000);
+                            }
+                            skillMessage = `💜 ${this.currentPlantName}技能：魅惑提示！正確答案發光`;
+                            skillEffect = true;
+                            break;
+                            
+                        case '金盞花':
+                            this.score += 50;
+                            skillMessage = `🌼 ${this.currentPlantName}技能：產生金幣！+50分`;
+                            skillEffect = true;
+                            break;
+                            
+                        case '蘑菇燈':
+                            this.timeLeft += 5;
+                            skillMessage = `💡 ${this.currentPlantName}技能：照明除霧！+5秒`;
+                            skillEffect = true;
+                            break;
+                            
+                        default:
+                            this.timeLeft += 2;
+                            skillMessage = `✨ ${this.currentPlantName}技能：${this.currentPlant.skill}！+2秒`;
+                            skillEffect = true;
+                            break;
+                    }
+                    
+                    if (skillEffect) {
+                        messageEl.textContent += ` ${skillMessage}`;
+                        messageEl.className += ' animate-pulse';
+                        
+                        document.getElementById('plantChar').classList.add('glow');
+                        setTimeout(() => {
+                            document.getElementById('plantChar').classList.remove('glow');
+                        }, 1000);
+                    }
+                }
+            }
+                                                                          
+                                                      
             attackZombies(isCritical = false) {
                 const aliveZombies = this.zombieArmy.filter(z => z.alive);
                 if (aliveZombies.length === 0) return;
-                
+
                 // 隨機攻擊一隻殭屍
                 const targetZombie = aliveZombies[Math.floor(Math.random() * aliveZombies.length)];
-                
+
                 // Boss受到的傷害較少，會心一擊傷害加倍
                 let damage = targetZombie.isBoss ? 20 : 30;
                 if (isCritical) {
@@ -1293,9 +1603,12 @@
                 setTimeout(() => {
                     transitionScreen.classList.add('hidden');
                     gameArea.classList.remove('hidden');
+                    // 小機率觸發秘密關卡（參考PvZ彩蛋），第四關後
+                    this.maybeTriggerSecretLevel();
                     this.createZombieArmy();
                     this.generateQuestion();
                     this.updateGameAreaStyle();
+
                     // 重新啟動計時器
                     this.startTimer();
                 }, 3000);
@@ -1313,6 +1626,31 @@
                 } else {
                     gameArea.className = 'bg-white/95 rounded-xl p-8 shadow-2xl';
                 }
+            }
+
+            maybeTriggerSecretLevel() {
+                if (this.level >= 4 && Math.random() < 0.08) {
+                    this.triggerSecretLevel();
+                } else {
+                    this.isSecretLevel = false;
+                    const gameArea = document.getElementById('gameArea');
+                    gameArea.style.filter = '';
+                    gameArea.style.boxShadow = '';
+                }
+            }
+
+            // 秘密關卡：夜間墓地風格，技能頻率提升
+            triggerSecretLevel() {
+                this.isSecretLevel = true;
+                const gameArea = document.getElementById('gameArea');
+                gameArea.style.filter = 'grayscale(0.15) brightness(0.95)';
+                gameArea.style.boxShadow = 'inset 0 0 120px rgba(0,0,0,0.5)';
+                const messageEl = document.getElementById('gameMessage');
+                messageEl.textContent = '🌙 秘密關卡：夜間墓地來襲！小心迷霧與詭異殭屍...';
+                messageEl.className = 'text-center text-lg font-bold h-8 text-indigo-700';
+                setTimeout(() => {
+                    if (messageEl.textContent.includes('秘密關卡')) messageEl.textContent = '';
+                }, 3000);
             }
 
             useUltimateSkill() {
@@ -1542,7 +1880,10 @@
                 this.difficulty = null;
                 this.hiddenOptions = [];
                 this.correctStreak = 0;
-                
+                this.currentPlant = null;
+                this.currentPlantName = null;
+                this.isRescueLevel = false;
+                 
                 if (this.timer) {
                     clearInterval(this.timer);
                 }
@@ -1552,22 +1893,32 @@
                 if (this.questionTimer) {
                     clearTimeout(this.questionTimer);
                 }
-                
+
+                document.body.className = 'min-h-screen bg-gradient-to-b from-green-400 via-green-500 to-green-600';
+
                 // 重置角色
-                document.getElementById('plantChar').textContent = '🌻';
                 
+                document.getElementById('plantChar').textContent = '🌻';
+                document.getElementById('plantName').textContent = '守護植物';
+
                 // 重置標題
                 document.getElementById('gameSubtitle').textContent = '數學大作戰';
-                
+
                 // 顯示模式選擇，隱藏其他畫面
                 document.getElementById('modeSelection').classList.remove('hidden');
                 document.getElementById('difficultySelection').classList.add('hidden');
                 document.getElementById('gameArea').classList.add('hidden');
                 document.getElementById('gameOverScreen').classList.add('hidden');
                 document.getElementById('transitionScreen').classList.add('hidden');
-                
+                document.getElementById('rescueScreen').classList.add('hidden');
+
                 // 重置遊戲區域樣式
-                document.getElementById('gameArea').className = 'bg-white/95 rounded-xl p-8 shadow-2xl hidden';
+                const gameArea = document.getElementById('gameArea');
+                gameArea.className = 'bg-white/95 rounded-xl p-8 shadow-2xl hidden';
+                gameArea.style.filter = '';
+                gameArea.style.opacity = '';
+                gameArea.style.boxShadow = '';
+                gameArea.classList.remove('animate-pulse');
             }
         }
 
