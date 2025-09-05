@@ -48,6 +48,19 @@
             0%, 100% { box-shadow: 0 0 10px #fbbf24, 0 0 20px #fbbf24; }
             50% { box-shadow: 0 0 30px #fbbf24, 0 0 50px #fbbf24, 0 0 70px #fbbf24; }
         }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }        
         .bounce { animation: bounce 0.6s; }
         .shake { animation: shake 0.5s; }
         .glow { animation: glow 1s infinite; }
@@ -120,12 +133,17 @@
             <!-- 模式選擇畫面 -->
             <div id="modeSelection" class="bg-white/95 rounded-xl p-8 shadow-2xl text-center">
             <h2 class="text-3xl font-bold text-gray-800 mb-8">🎮 選擇遊戲模式</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <button id="multiplicationMode" class="mode-btn bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-xl text-xl font-bold hover:from-blue-600 hover:to-purple-700 transition-all shadow-lg transform hover:scale-105">
                     <div class="text-4xl mb-3">✖️</div>
                     <div class="text-2xl mb-2">九九乘法表</div>
                     <div class="text-sm opacity-90">挑戰乘法運算</div>
                 </button>
+                <button id="divisionMode" class="mode-btn bg-gradient-to-r from-yellow-500 to-orange-600 text-white p-6 rounded-xl text-xl font-bold hover:from-yellow-600 hover:to-orange-700 transition-all shadow-lg transform hover:scale-105">
+                    <div class="text-4xl mb-3">➗</div>
+                    <div class="text-2xl mb-2">百內數除法</div>
+                    <div class="text-sm opacity-90">挑戰除法運算</div>
+                </button>                
                 <button id="addSubMode" class="mode-btn bg-gradient-to-r from-green-500 to-teal-600 text-white p-6 rounded-xl text-xl font-bold hover:from-green-600 hover:to-teal-700 transition-all shadow-lg transform hover:scale-105">
                     <div class="text-4xl mb-3">➕➖</div>
                     <div class="text-2xl mb-2">單位數加減</div>
@@ -203,10 +221,6 @@
                     <div class="flex items-center">
                         <span class="text-lg mr-2">🎪</span>
                         <span>分身術：假選項</span>
-                    </div>
-                    <div class="flex items-center">
-                        <span class="text-lg mr-2">📚</span>
-                        <span>文字題：Boss專屬技能</span>
                     </div>
                 </div>
             </div>
@@ -391,12 +405,14 @@
                 this.currentPlantName = null;
                 this.zombieTypes = ['🧟‍♂️', '🧟‍♀️', '👻', '💀', '🎃', '👹', '🤖', '👾', '🦇', '🎈'];
                 this.bossTypes = {
-                    3: { emoji: '🧪', name: '殭屍博士', health: 200, isBigGuy: true },
+                    3: { emoji: '🧪', name: '殭屍博士', health: 200},
                     5: { emoji: '🦸‍♂️', name: '超人殭屍', health: 250},
                     7: { emoji: '💪🧟', name: '殭屍大隻佬', health: 300},
                     //7: { emoji: '⚡', name: '雷電殭屍', health: 300 },
                     9: { emoji: '⚡❄️', name: '雷電冰霜殭屍', health: 350 },
-                    10: { emoji: '💀', name: '終極魔王', health: 500 }
+                    10: { emoji: '💀', name: '終極魔王', health: 500 },
+                    13: { emoji: '🔥👑', name: '熔岩帝王殭屍', health: 400 },
+                    15: { emoji: '🌪️🧟‍♂️', name: '究極領主殭屍', health: 600 }
                 };
                 this.balloonZombie = { emoji: '🎈', name: '汽球殭屍', health: 150 };
                 this.difficultySettings = {
@@ -454,6 +470,38 @@
                       { question: "向日葵在 10 天內每天產出 3 顆陽光，一共多少？", answer: 30, options: [27, 30, 33, 36] },
                       { question: "殭屍博士派出 6 台機器，每台有 7 隻殭屍，一共多少？", answer: 42, options: [36, 42, 48, 49] }
                     ],
+                    division: [
+                      { question: "向日葵產出 42 顆陽光，平均分給 6 棵植物，每棵分到多少？", answer: 7, options: [6, 7, 8, 9] },
+                      { question: "豌豆射手射出 72 顆豌豆，平均每次射 8 顆，一共射了幾次？", answer: 9, options: [8, 9, 10, 11] },
+                      { question: "堅果牆有 24 塊，平均分成 4 層，每層有多少塊？", answer: 6, options: [5, 6, 7, 8] },
+                      { question: "寒冰射手凍住 35 隻殭屍，平均每次凍住 5 隻，一共凍了幾次？", answer: 7, options: [6, 7, 8, 9] },
+                      { question: "火炬樁燒掉 36 隻殭屍，平均每次燒掉 9 隻，一共燒了幾次？", answer: 4, options: [3, 4, 5, 6] },
+                      { question: "三重射手射出 24 顆豌豆，平均每次射 3 顆，一共射了幾次？", answer: 8, options: [7, 8, 9, 10] },
+                      { question: "玉米投手丟出 54 顆玉米，平均每次丟 6 顆，一共丟了幾次？", answer: 9, options: [8, 9, 10, 11] },
+                      { question: "大嘴花吃掉 49 隻殭屍，平均每次吃 7 隻，一共吃了幾次？", answer: 7, options: [6, 7, 8, 9] },
+                      { question: "地刺刺穿 30 隻殭屍，平均每次刺穿 5 隻，一共刺了幾次？", answer: 6, options: [5, 6, 7, 8] },
+                      { question: "高堅果牆有 24 塊，平均分成 3 層，每層有多少塊？", answer: 8, options: [6, 7, 8, 9] },
+                      { question: "向日葵產出 28 顆陽光，平均每天產出 4 顆，一共幾天？", answer: 7, options: [6, 7, 8, 9] },
+                      { question: "爆炸櫻桃炸掉 30 隻殭屍，平均每次炸掉 6 隻，一共炸了幾次？", answer: 5, options: [4, 5, 6, 7] },
+                      { question: "辣椒燒掉 9 隻殭屍，每排有 3 隻，一共燒了幾排？", answer: 3, options: [2, 3, 4, 5] },
+                      { question: "南瓜頭保護 24 次，共有 4 棵植物，每棵被保護幾次？", answer: 6, options: [5, 6, 7, 8] },
+                      { question: "磁鐵菇吸走 50 個鐵桶殭屍，每次吸 10 個，一共吸了幾次？", answer: 5, options: [4, 5, 6, 7] },
+                      { question: "香蒲射出 42 根箭，每次射 6 根，一共射了幾次？", answer: 7, options: [6, 7, 8, 9] },
+                      { question: "地雷炸掉 24 隻殭屍，每次炸掉 8 隻，一共炸了幾次？", answer: 3, options: [2, 3, 4, 5] },
+                      { question: "冰凍蘑菇凍住 36 隻殭屍，每次凍住 4 排，一排有幾隻？", answer: 9, options: [8, 9, 10, 11] },
+                      { question: "雙向射手射出 20 顆豌豆，每次射 2 顆，一共射了幾次？", answer: 10, options: [9, 10, 11, 12] },
+                      { question: "大蒜轉移 12 次，共有 6 隻殭屍，每隻被轉移幾次？", answer: 2, options: [1, 2, 3, 4] },
+                      { question: "舞王殭屍召喚 20 隻舞伴，每次召喚 4 隻，一共召喚幾次？", answer: 5, options: [4, 5, 6, 7] },
+                      { question: "巨人殭屍打倒 18 棵植物，每次打倒 6 棵，一共打了幾次？", answer: 3, options: [2, 3, 4, 5] },
+                      { question: "戴夫丟出 30 顆辣椒，每次丟 5 顆，一共丟了幾次？", answer: 6, options: [5, 6, 7, 8] },
+                      { question: "陽光菇產出 32 顆陽光，每次產出 4 顆，一共產出幾次？", answer: 8, options: [7, 8, 9, 10] },
+                      { question: "爆米花機爆出 30 顆爆米花，每次爆出 6 顆，一共爆了幾次？", answer: 5, options: [4, 5, 6, 7] },
+                      { question: "冰西瓜投手丟出 27 顆冰西瓜，每次丟 3 顆，一共丟了幾次？", answer: 9, options: [8, 9, 10, 11] },
+                      { question: "地刺王刺穿 48 隻殭屍，每次刺穿 6 隻，一共刺了幾次？", answer: 8, options: [7, 8, 9, 10] },
+                      { question: "高堅果牆升級 20 次，每次增加 4 塊，一共增加多少塊？", answer: 80, options: [60, 70, 80, 90] },
+                      { question: "向日葵在 10 天內產出 30 顆陽光，每天產出多少？", answer: 3, options: [2, 3, 4, 5] },
+                      { question: "殭屍博士派出 42 隻殭屍，每台機器派出 6 隻，一共派出幾台？", answer: 7, options: [6, 7, 8, 9] }
+                    ],
                     addSub: [
                       { question: "殭屍來了 8 隻，又來了 7 隻，一共多少隻？", answer: 15, options: [14, 15, 16, 17] },
                       { question: "花園裡原本有 9 棵植物，被吃掉了 4 棵，還剩多少棵？", answer: 5, options: [4, 5, 6, 7] },
@@ -483,8 +531,8 @@
                       { question: "冰西瓜投手丟出 9 顆冰西瓜，又丟了 6 顆，一共多少？", answer: 15, options: [14, 15, 16, 17] },
                       { question: "地刺王刺穿了 10 隻殭屍，被移除 2 次，還剩多少次刺穿？", answer: 8, options: [7, 8, 9, 10] },
                       { question: "高堅果牆升級了 7 次，又升級了 5 次，一共多少？", answer: 12, options: [11, 12, 13, 14] },
-                      { question: "向日葵在 10 天內每天產出 4 顆陽光，一共多少？", answer: 40, options: [36, 40, 44, 48] },
-                      { question: "殭屍博士派出 18 隻殭屍，被植物打倒了 9 隻，還剩多少？", answer: 9, options: [8, 9, 10, 11] }
+                      { question: "向日葵產出 9 顆陽光, 又產出 4 顆陽光，一共多少？", answer: 13, options: [12, 13, 14, 15] },
+                      { question: "殭屍博士派出 18 隻殭屍，被植物打倒了 9 隻，還剩多少？", answer: 9, options: [8, 9, 10, 11] }                     
                     ],
                     mixed: [
                       { question: "寒冰射手一次射出 5 顆冰球，每顆打中 4 隻殭屍，一共打中多少隻？", answer: 20, options: [16, 20, 24, 18] },
@@ -516,7 +564,11 @@
                       { question: "香蒲射出 4 根箭，每根打中 3 隻殭屍，又打中 2 隻，一共多少？", answer: 14, options: [12, 14, 16, 18] },
                       { question: "地雷炸掉 5 隻殭屍，又炸掉 4 隻，每隻值 2 分，一共得多少分？", answer: 18, options: [16, 18, 20, 22] },
                       { question: "冰凍蘑菇凍住 6 排殭屍，每排 5 隻，又凍住 4 隻，一共多少？", answer: 34, options: [32, 34, 36, 38] },
-                      { question: "雙向射手射出 3 顆豌豆，射了 6 次，又加射 3 顆，一共多少？", answer: 21, options: [20, 21, 22, 24] }
+                      { question: "雙向射手射出 3 顆豌豆，射了 6 次，又加射 3 顆，一共多少？", answer: 21, options: [20, 21, 22, 24] },
+                      { question: "舞王殭屍召喚 20 隻舞伴，每次召喚 4 隻，一共召喚幾次？", answer: 5, options: [4, 5, 6, 7] },
+                      { question: "巨人殭屍打倒 18 棵植物，每次打倒 6 棵，一共打了幾次？", answer: 3, options: [2, 3, 4, 5] },
+                      { question: "戴夫丟出 30 顆辣椒，每次丟 5 顆，一共丟了幾次？", answer: 6, options: [5, 6, 7, 8] },
+                      { question: "陽光菇產出 32 顆陽光，每次產出 4 顆，一共產出幾次？", answer: 8, options: [7, 8, 9, 10] } 
                     ]
                 };
             }
@@ -525,6 +577,7 @@
                 document.getElementById('multiplicationMode').addEventListener('click', () => this.selectMode('multiplication'));
                 document.getElementById('addSubMode').addEventListener('click', () => this.selectMode('addSub'));
                 document.getElementById('mixedMode').addEventListener('click', () => this.selectMode('mixed'));
+                document.getElementById('divisionMode').addEventListener('click', () => this.selectMode('division'));
                 
                 document.getElementById('easyDifficulty').addEventListener('click', () => this.startGame('easy'));
                 document.getElementById('normalDifficulty').addEventListener('click', () => this.startGame('normal'));
@@ -538,6 +591,7 @@
                 // 更新選擇的模式文字
                 const modeNames = {
                     'multiplication': '九九乘法表',
+                    'division': '百內數除法',                   
                     'addSub': '單位數加減',
                     'mixed': '混合模式'
                 };
@@ -608,7 +662,8 @@
             triggerRescueLevel() {
                 this.isRescueLevel = true;
                 this.balloonZombieHealth = 150;
-
+                this.level--;
+                
                 // 隱藏遊戲區域，顯示拯救畫面
                 document.getElementById('gameArea').classList.add('hidden');
                 document.getElementById('rescueScreen').classList.remove('hidden');
@@ -670,11 +725,10 @@
                         maxHealth: bossHealth,
                         alive: true,
                         isBoss: true,
-                        skillCooldown: 0,
-                        isBigGuy: !!boss.isBigGuy
+                        skillCooldown: 0
                     });
                 } else {
-                    // 普通關卡：根據關卡決定殭屍數量 (3-8隻)
+                    // 普通關卡：根據關卡決定殭屍數量 (3-6隻)
                     const zombieCount = Math.min(3 + this.level - 1, 6);
 
                     for (let i = 0; i < zombieCount; i++) {
@@ -696,7 +750,7 @@
             }
 
             isBossLevel() {
-                return [3, 5, 7, 9, 10].includes(this.level);
+                return [3, 5, 7, 9, 10, 13, 15].includes(this.level);
             }
 
             renderZombieArmy() {
@@ -756,6 +810,10 @@
                 
                 const settings = this.difficultySettings[this.difficulty];
                 const actualSkillChance = this.isSecretLevel ? Math.max(settings.skillChance, 0.6) : settings.skillChance;
+                
+                // 🔥 Boss 關技能更密集（每關減少 50ms，最低 400ms）
+                const interval = this.isBossLevel() ? Math.max(1000 - this.level * 80, 500) : 1000;
+                
                 if (actualSkillChance > 0) {
                     this.zombieSkillTimer = setInterval(() => {
                         if (this.gameActive) {
@@ -765,7 +823,7 @@
                                 this.activateZombieSkill();
                             }
                         }
-                    }, 1000); // 每秒檢查並遞減冷卻
+                    }, interval); // 每秒檢查並遞減冷卻
                 }
             }
 
@@ -775,17 +833,16 @@
                 
                 const zombie = aliveZombies[Math.floor(Math.random() * aliveZombies.length)];
                 zombie.skillCooldown = 6; // 6秒冷卻
+                                
+                let skills = ['desaturate','shake','distort','englishify', 'shuffle', 'timeReduce', 'hide', 'freeze', 'blind', 'confuse', 'multiply', 'disguise'];
                 
-                //let skills = ['englishify','hide', 'shuffle', 'timeReduce', 'disguise', 'freeze', 'blind', 'confuse', 'multiply'];
-                let skills = ['englishify', 'shuffle', 'timeReduce', 'hide', 'freeze', 'blind', 'confuse', 'multiply'];
-                // Boss有額外的文字題技能
-                if (zombie.isBoss) {
-                    skills.push('textQuestion');
+                // 🧟‍♂️ Boss 發動多個技能
+                const skillCount = zombie.isBoss ? Math.floor(Math.random() * 2) + 1 : 1; // Boss發動1~2個技能，普通殭屍只發動1個
+
+                for (let i = 0; i < skillCount; i++) {
+                    const skill = skills[Math.floor(Math.random() * skills.length)];
+                    this.executeZombieSkill(skill, zombie);
                 }
-                
-                const skill = skills[Math.floor(Math.random() * skills.length)];
-                
-                this.executeZombieSkill(skill, zombie);
                 
                 // 減少冷卻時間
                 setTimeout(() => {
@@ -844,19 +901,28 @@
                         messageEl.textContent = `🎪 ${zombie.type} 使用分身術！出現假選項了！`;
                         messageEl.className = 'text-center text-lg font-bold h-8 text-pink-600';
                         break;
-                        
-                    case 'textQuestion':
-                        this.forceTextQuestion();
-                        messageEl.textContent = `📚 ${zombie.type} 使用文字題！出現常識問題了！`;
-                        messageEl.className = 'text-center text-lg font-bold h-8 text-purple-600';
-                        break;
                     case 'englishify':
                         this.englishifyOptions();
                         messageEl.textContent = `🇬🇧 ${zombie.type} 使用英文詛咒！請用英文作答！`;
                         messageEl.className = 'text-center text-lg font-bold h-8 text-blue-700';
                         break;
+                    case 'distort':
+                        this.distortOptions();
+                        messageEl.textContent = `🔍 ${zombie.type} 使用縮放干擾！選項大小混亂啦！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-yellow-600';
+                        break;                        
+                    case 'shake':
+                        this.shakeOptions();
+                        messageEl.textContent = `🩸 ${zombie.type} 使用震動術！選項開始抖動啦！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-red-600';
+                        break;          
+                    case 'desaturate':
+                        this.desaturateOptions();
+                        messageEl.textContent = `🧫 ${zombie.type} 使用顏色干擾術！選項變成黑白灰啦！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-gray-600';
+                        break;                        
                 }
-                
+                //console.log(messageEl.textContent);
 
                 
                 // 殭屍技能動畫
@@ -1080,6 +1146,46 @@
                 }, 10000);
             }
 
+            distortOptions() {
+                const options = document.querySelectorAll('.option-btn');
+                options.forEach(option => {
+                    // 隨機縮放比例（例如 0.8 到 1.4 之間）
+                    const scale = (Math.random() * 0.6 + 0.8).toFixed(2);
+                    option.style.transform = `scale(${scale})`;
+                    option.style.transition = 'transform 0.3s ease';
+
+                    // 6 秒後恢復原始大小
+                    setTimeout(() => {
+                        option.style.transform = 'scale(1)';
+                    }, 6000);
+                });
+            }  
+            
+            shakeOptions() {
+                const options = document.querySelectorAll('.option-btn');
+                options.forEach(option => {
+                    option.style.animation = 'shake 0.3s infinite';
+                    
+                    // 6 秒後停止震動
+                    setTimeout(() => {
+                        option.style.animation = 'none';
+                    }, 6000);
+                });
+            }
+
+            desaturateOptions() {
+                const options = document.querySelectorAll('.option-btn');
+                options.forEach(option => {
+                    option.style.filter = 'grayscale(100%)';
+                    option.style.transition = 'filter 0.3s ease';
+
+                    // 8 秒後恢復原色
+                    setTimeout(() => {
+                        option.style.filter = 'none';
+                    }, 8000);
+                });
+            }       
+            
             forceTextQuestion() {
                 // 強制下一題為文字題
                 setTimeout(() => {
@@ -1158,6 +1264,8 @@
                 }
                 
                 this.renderOptions(options);
+                //console.log(textQuestion.question);
+                //console.log(game.currentAnswer);
                 this.startQuestionTimer();
             }
 
@@ -1185,9 +1293,16 @@
                         this.currentAnswer = larger - smaller;
                         questionText = `${larger} - ${smaller} = ?`;
                     }
+                } else if (this.gameMode === 'division') {
+                    const divisor = Math.floor(Math.random() * 9) + 1; // 1~10
+                    const quotient = Math.floor(Math.random() * 9) + 1; // 1~10
+                    const dividend = divisor * quotient;
+                    questionText = `${dividend} ÷ ${divisor} = ?`;
+                    this.currentAnswer = quotient;
+                    maxAnswer = 10;              
                 } else if (this.gameMode === 'mixed') {
                     // 混合模式
-                    const operation = Math.floor(Math.random() * 3);
+                    const operation = Math.floor(Math.random() * 4);
                     if (operation === 0) {
                         // 乘法
                         this.currentAnswer = num1 * num2;
@@ -1197,6 +1312,12 @@
                         // 加法
                         this.currentAnswer = num1 + num2;
                         questionText = `${num1} + ${num2} = ?`;
+                    } else if (operation === 2) {
+                        // 除法
+                        const dividend = num1 * num2;
+                        questionText = `${dividend} ÷ ${num1} = ?`;
+                        this.currentAnswer = num2;
+                        maxAnswer = 10;                            
                     } else {
                         // 減法
                         const larger = Math.max(num1, num2);
@@ -1226,6 +1347,9 @@
                     [options[i], options[j]] = [options[j], options[i]];
                 }
                 
+                //console.log(questionText);
+                //console.log(game.currentAnswer);
+
                 this.renderOptions(options);
                 this.startQuestionTimer();
             }
@@ -1550,6 +1674,11 @@
             }
 
             nextLevel() {
+                if (this.level == 15)
+                {
+                    this.endGame('victory');
+                    return;
+                }
                 // 新增關卡完成歷史紀錄
                 this.addToHistory(`關卡 ${this.level} 完成！準備進入下一關`, 'success');
                 
@@ -1604,7 +1733,7 @@
                     transitionScreen.classList.add('hidden');
                     gameArea.classList.remove('hidden');
                     // 小機率觸發秘密關卡（參考PvZ彩蛋），第四關後
-                    this.maybeTriggerSecretLevel();
+                    //this.maybeTriggerSecretLevel();
                     this.createZombieArmy();
                     this.generateQuestion();
                     this.updateGameAreaStyle();
@@ -1618,7 +1747,7 @@
                 const gameArea = document.getElementById('gameArea');
                 
                 if (this.isBossLevel()) {
-                    if (this.level === 10) {
+                    if (this.level === 10 || this.level === 15){
                         gameArea.className = 'final-boss-bg rounded-xl p-8 shadow-2xl';
                     } else {
                         gameArea.className = 'boss-bg rounded-xl p-8 shadow-2xl';
@@ -1924,6 +2053,7 @@
 
         // 啟動遊戲
         window.addEventListener('DOMContentLoaded', () => {
+            //window.game = new MathZombieGame();
             new MathZombieGame();
         });
     </script>
