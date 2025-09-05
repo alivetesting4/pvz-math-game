@@ -94,7 +94,7 @@
     <!-- 遊戲標題 -->
     <div class="text-center py-6">
         <h1 class="text-4xl font-bold text-white mb-2">🌻 植物大戰殭屍 🧟‍♂️</h1>
-        <h2 class="text-2xl font-semibold text-yellow-200" id="gameSubtitle">數學大作戰</h2>
+        <h2 class="text-2xl font-semibold text-yellow-200" id="gameSubtitle">數學大作戰 (ver 1.2.1)</h2>
     </div>
 
     <!-- 遊戲狀態欄 -->
@@ -355,6 +355,7 @@
                 this.isSecretLevel = false; // 秘密關卡
                 this.englishifyUnlocked = false; // 打敗殭屍大隻佬後解鎖
                 this.currentBossIsBigGuy = false; // 本回合Boss是否為殭屍大隻佬
+                this.originalHint = "選擇正確答案來攻擊殭屍！";
                 
                 // 完整植物列表
                 this.plants = {
@@ -642,7 +643,7 @@
                 this.bindEvents();
                 
                 // 檢查是否觸發拯救關卡 (15% 機率)
-                if (Math.random() < 0.15) {
+                if (Math.random() < 0.18) {
                     this.triggerRescueLevel();
                 }
             }
@@ -834,13 +835,28 @@
                 const zombie = aliveZombies[Math.floor(Math.random() * aliveZombies.length)];
                 zombie.skillCooldown = 6; // 6秒冷卻
                                 
-                let skills = ['desaturate','shake','distort','englishify', 'shuffle', 'timeReduce', 'hide', 'freeze', 'blind', 'confuse', 'multiply', 'disguise'];
+                //let skills = ['coverTop','desaturate','shake','distort','englishify', 'shuffle', 'timeReduce', 'hide', 'freeze', 'blind', 'confuse', 'multiply', 'disguise'];
+                const allSkills = [
+                  'hide','shake','distort','blind','confuse','multiply',
+                  'shuffle','freeze','englishify',
+                  'disguise','coverTop','desaturate','timeReduce'
+                ];
+
+                // 每關解鎖技能數 = Math.floor((level / 5) * allSkills.length)
+                const unlockedSkillCount = Math.min(
+                  Math.floor((this.level / 5) * allSkills.length),
+                  allSkills.length
+                );
+
+                const availableSkills = allSkills.slice(0, unlockedSkillCount);
+
+                
                 
                 // 🧟‍♂️ Boss 發動多個技能
                 const skillCount = zombie.isBoss ? Math.floor(Math.random() * 2) + 1 : 1; // Boss發動1~2個技能，普通殭屍只發動1個
 
                 for (let i = 0; i < skillCount; i++) {
-                    const skill = skills[Math.floor(Math.random() * skills.length)];
+                    const skill = availableSkills[Math.floor(Math.random() * availableSkills.length)];
                     this.executeZombieSkill(skill, zombie);
                 }
                 
@@ -920,9 +936,14 @@
                         this.desaturateOptions();
                         messageEl.textContent = `🧫 ${zombie.type} 使用顏色干擾術！選項變成黑白灰啦！`;
                         messageEl.className = 'text-center text-lg font-bold h-8 text-gray-600';
-                        break;                        
+                        break;    
+                    case 'coverTop':
+                        this.coverTopHalfOfText();
+                        messageEl.textContent = `🕳️ ${zombie.type} 使用上半遮蔽術！題目被蓋住一半了！`;
+                        messageEl.className = 'text-center text-lg font-bold h-8 text-gray-700';
+                        break;
+                        
                 }
-                //console.log(messageEl.textContent);
 
                 
                 // 殭屍技能動畫
@@ -990,21 +1011,7 @@
 
                 // 顯示英文作答提示
                 const hintEl = document.getElementById('questionHint');
-                const originalHint = hintEl.textContent;
                 hintEl.textContent = '請選擇正確的英文數字單字！';
-
-                // 10秒後恢復數字顯示（若題目尚未變更）
-                setTimeout(() => {
-                    if (!this.gameActive) return;
-                    if (!this.englishModeActive) return;
-                    // 恢復為數字選項
-                    this.currentAnswer = this.currentAnswerBackup;
-                    this.renderOptions(this.originalOptionsBackup);
-                    hintEl.textContent = originalHint;
-                    this.englishModeActive = false;
-                    this.originalOptionsBackup = null;
-                    this.currentAnswerBackup = null;
-                }, 10000);
             }
 
             hideRandomOption() {
@@ -1185,6 +1192,31 @@
                     }, 8000);
                 });
             }       
+
+            coverTopHalfOfText() {
+                if (this.currentQuestionType === 'text') return;
+                const questionEl = document.getElementById('question');
+                // 建立遮罩層
+                const overlay = document.createElement('div');
+                overlay.className = 'top-half-cover';
+                overlay.style.position = 'absolute';
+                overlay.style.top = '0';
+                overlay.style.left = '0';
+                overlay.style.width = '100%';
+                overlay.style.height = '45%'; // 蓋上半部
+                overlay.style.backgroundColor = 'rgba(229, 231, 235, 0.93)';
+                overlay.style.pointerEvents = 'none';
+                overlay.style.zIndex = '10';
+
+                // 確保題目容器有定位
+                questionEl.style.position = 'relative';
+                questionEl.appendChild(overlay);
+
+                // 3.5 秒後移除遮罩
+                setTimeout(() => {
+                    questionEl.removeChild(overlay);
+                }, 3500);
+            }
             
             forceTextQuestion() {
                 // 強制下一題為文字題
@@ -1228,7 +1260,10 @@
             generateQuestion() {
                 // 20% 機率出現文字題 (關卡3以上)
                 const shouldUseTextQuestion = this.level >= 3 && Math.random() < 0.2;
-                
+ 
+                const hintEl = document.getElementById('questionHint');
+                hintEl.textContent = this.originalHint;
+ 
                 if (shouldUseTextQuestion) {
                     this.generateTextQuestion();
                 } else {
@@ -1266,6 +1301,7 @@
                 this.renderOptions(options);
                 //console.log(textQuestion.question);
                 //console.log(game.currentAnswer);
+                //console.log(options);
                 this.startQuestionTimer();
             }
 
@@ -1408,6 +1444,10 @@
                 const messageEl = document.getElementById('gameMessage');
                 
                 if (isCorrect) {
+                    this.englishModeActive = false;
+                    this.originalOptionsBackup = null;
+                    this.currentAnswerBackup = null;
+                    
                     this.correctStreak++; // 增加連續答對次數
                     
                     // 基礎分數
